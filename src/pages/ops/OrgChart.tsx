@@ -216,6 +216,30 @@ export function OrgChart() {
             <div className="flex-1 flex flex-col overflow-hidden">
                 {/* Header Stats */}
                 <div className="p-6 border-b bg-gradient-to-r from-background to-secondary/20">
+                    {/* Stats Cards Row */}
+                    <div className="grid grid-cols-5 gap-4 mb-6">
+                        <div className="text-center p-4 rounded-xl border-2 border-emerald-500 bg-emerald-500/10">
+                            <div className="text-3xl font-bold text-emerald-500">1</div>
+                            <div className="text-xs text-muted-foreground uppercase">Commander</div>
+                        </div>
+                        <div className="text-center p-4 rounded-xl border border-border">
+                            <div className="text-3xl font-bold">{rootAgents.filter(a => getChildAgents(a.id).length > 0).length}</div>
+                            <div className="text-xs text-muted-foreground uppercase">Chiefs</div>
+                        </div>
+                        <div className="text-center p-4 rounded-xl border border-border">
+                            <div className="text-3xl font-bold">{agents.length}</div>
+                            <div className="text-xs text-muted-foreground uppercase">Total Agents</div>
+                        </div>
+                        <div className="text-center p-4 rounded-xl border border-border">
+                            <div className="text-3xl font-bold text-blue-500">{activeAgents}</div>
+                            <div className="text-xs text-muted-foreground uppercase">Active</div>
+                        </div>
+                        <div className="text-center p-4 rounded-xl border border-border">
+                            <div className="text-3xl font-bold text-muted-foreground">{totalSpartans - agents.length}</div>
+                            <div className="text-xs text-muted-foreground uppercase">Available</div>
+                        </div>
+                    </div>
+                    
                     <div className="flex items-center justify-between mb-4">
                         <div>
                             <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -223,20 +247,6 @@ export function OrgChart() {
                                 Command Hierarchy
                             </h1>
                             <p className="text-muted-foreground">Manage your 300 Digital Spartans</p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <div className="text-center">
-                                <div className="text-3xl font-bold text-emerald-500">{totalSpartans - agents.length}</div>
-                                <div className="text-xs text-muted-foreground uppercase">Available</div>
-                            </div>
-                            <div className="text-center">
-                                <div className="text-3xl font-bold">{agents.length}</div>
-                                <div className="text-xs text-muted-foreground uppercase">Spawned</div>
-                            </div>
-                            <div className="text-center">
-                                <div className="text-3xl font-bold text-blue-500">{activeAgents}</div>
-                                <div className="text-xs text-muted-foreground uppercase">Active</div>
-                            </div>
                         </div>
                     </div>
                     
@@ -280,6 +290,19 @@ export function OrgChart() {
                                     <option value="working">Working</option>
                                     <option value="completed">Completed</option>
                                 </select>
+                            </div>
+
+                            {/* Kratos Root - At Top */}
+                            <div className="mb-6">
+                                <div className="flex items-center gap-4 p-6 rounded-xl border-2 border-emerald-500 bg-emerald-500/10">
+                                    <div className="w-20 h-20 rounded-xl flex items-center justify-center text-4xl bg-emerald-500/20">
+                                        🪓
+                                    </div>
+                                    <div>
+                                        <div className="text-2xl font-bold text-emerald-500">KRATOS</div>
+                                        <div className="text-sm text-muted-foreground">Commander • {agents.length} Spartans Deployed • {rootAgents.filter(a => getChildAgents(a.id).length > 0).length} Chiefs</div>
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Captains Row - Top 4 Agents */}
@@ -331,17 +354,6 @@ export function OrgChart() {
                                             </div>
                                         </div>
                                     ))}
-                                </div>
-                            </div>
-
-                            {/* Kratos Root */}
-                            <div className="flex items-center gap-4 p-4 rounded-xl border-2 border-emerald-500 bg-emerald-500/10 mb-6">
-                                <div className="w-16 h-16 rounded-xl flex items-center justify-center text-3xl bg-emerald-500/20">
-                                    🪓
-                                </div>
-                                <div>
-                                    <div className="text-xl font-bold text-emerald-500">KRATOS</div>
-                                    <div className="text-sm text-muted-foreground">Commander • {agents.length} Spartans Deployed</div>
                                 </div>
                             </div>
 

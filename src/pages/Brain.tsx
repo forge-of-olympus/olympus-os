@@ -7,20 +7,16 @@ import {
     Settings, 
     Zap, 
     Target, 
-    MessageSquare,
     Command,
     Shield,
     Cpu,
     Database,
     Globe,
-    Mail,
-    Calendar,
-    Bot,
     Users,
     Activity,
-    TrendingUp,
     CheckCircle,
-    AlertCircle,
+    FileText,
+    Clock,
     Save,
     RefreshCw
 } from "lucide-react"
@@ -44,6 +40,56 @@ interface SystemStatus {
     activeConnections: number
 }
 
+const memoryFiles = [
+    {
+        title: '2026-02-20',
+        content: `# 2026-02-20
+
+## Kronos Repo & Deployment Progress
+- User requested initialization of a fresh Kronos GitHub repo under forge-of-olympus. 
+- Tech stack planned: React + Vite MVP with dashboard, mocked sub-agents, command surface, and live status feed.
+- Production wiring: Bind to Vercel project https://vercel.com/kratos-factory-deployments-projects, production branch main.
+- Deployment: Production path main, no canary.
+- Health checks: Page title Kronos, topbar branding Kronos, test sub-agent spawn status.
+- Deliverables: Live Kronos production URL, compact health-pass, rollback/hotfix plan if needed.
+- Status: Repo creation and deployment in progress; awaiting completion to report live URL and health-pass.
+- User expressed frustration with delays; committed to executing end-to-end without further questions.
+
+## Olympus-OS Status
+- Branding updates completed: Olympus-OS text in topbar, River-OS logo image retained with alt text Olympus-OS.
+- Production URL: https://olympus-os.vercel.app (verified via Vercel CLI).
+- GitHub auth: Active (kratos-factory), token scopes include repo, read:org, workflow.
+- Vercel project: olympus-os bound to forge-of-olympus/olympus-os, production path main.
+
+## Recent Actions
+- Re-checked GitHub↔Vercel bindings and triggered production deploys for both Olympus-OS and Kronos.
+- Addressed user concerns about stalled progress by committing to direct execution without further questions.
+- Planned rollback/hotfix steps for both projects if deployment issues arise.
+
+## Next Steps
+- Complete Kronos deployment and report live URL + health-pass.
+- Proceed with Olympus-OS remediation if needed after Kronos is stabilized.
+- Provide rollback/hotfix plans for both projects if any deployment blockers occur.`
+    },
+    {
+        title: 'wins.md',
+        content: `# Daily Wins Log
+
+## 2026-02-20
+- **Kronos Command Deck Deployed:** Built and deployed a command dashboard for commanding sub-agents. Live URL: https://kronos-command-deck.vercel.app
+- **Features:** Sub-agents panel (Athena, Hephaestus, Apollo, Ares), spawn controls, command center, real-time status feed
+- **Tech Stack:** React + Vite + TypeScript
+- **GitHub:** https://github.com/forge-of-olympus/kronos-command-deck
+
+## 2026-02-16
+- **Identity Forged:** Kratos initialized. Soul and mission codified.
+- **Arsenal Secured:** Web Recon (Brave/Chromium), G-Suite (GOG), Code (GH/Vercel) fully operational.
+- **Olympus Rising:** Deployed \`kratos-forge\` (KratosOS), \`project-300\` (Phalanx Command), and \`olympus-os\` (Full Enterprise OS).
+- **Fleet Assembled:** Digital Spartans (Elon, Gary, Alex) defined and integrated into the OS.
+- **Infrastructure:** Secured repository history and successfully deployed to Vercel production.`
+    }
+]
+
 export function Brain() {
     const [config, setConfig] = useState<KratosConfig>({
         name: 'Kratos',
@@ -63,46 +109,14 @@ export function Brain() {
         activeConnections: 12
     })
 
-    const [chatLog, setChatLog] = useState<{ role: string; content: string; time: string }[]>([
-        { role: 'system', content: 'Brain interface initialized. Kratos ready for direct communication.', time: '00:00' }
-    ])
-    const [chatInput, setChatInput] = useState('')
-
-    const handleSendMessage = () => {
-        if (!chatInput.trim()) return
-        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        setChatLog(prev => [...prev, { role: 'user', content: chatInput, time }])
-        
-        // Simulate Kratos response
-        setTimeout(() => {
-            const responses: Record<string, string> = {
-                'hello': 'Greetings, Commander. Brain interface active. How may I serve?',
-                'status': `Systems operational. CPU: ${systemStatus.cpu}%, Memory: ${systemStatus.memory}%. 300 Spartans ready.`,
-                'help': 'Direct control available. Configure my settings, monitor system status, or communicate directly through this interface.',
-                'deploy': 'Deployment sequence ready. Which project shall we deploy?',
-                'default': 'I receive your command, Commander. Executing now.'
-            }
-            const lower = chatInput.toLowerCase()
-            let response = responses.default
-            for (const [key, value] of Object.entries(responses)) {
-                if (lower.includes(key)) {
-                    response = value
-                    break
-                }
-            }
-            const msgTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            setChatLog(prev => [...prev, { role: 'kratos', content: response, time: msgTime }])
-        }, 800)
-        
-        setChatInput('')
-    }
+    const [selectedMemory, setSelectedMemory] = useState(0)
 
     const handleConfigChange = (key: keyof KratosConfig, value: any) => {
         setConfig(prev => ({ ...prev, [key]: value }))
     }
 
     const handleSaveConfig = () => {
-        setChatLog(prev => [...prev, { role: 'system', content: `Configuration saved: ${config.name} - ${config.role}`, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }])
+        alert('Configuration saved!')
     }
 
     return (
@@ -179,50 +193,31 @@ export function Brain() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-6">
-                    {/* Direct Chat with Kratos */}
-                    <Card className="h-[500px]">
+                    {/* Memory Files */}
+                    <Card className="h-[500px] overflow-hidden">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
-                                <MessageSquare className="h-5 w-5" />
-                                Direct Communication
+                                <FileText className="h-5 w-5" />
+                                Kratos Memory
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="flex flex-col h-[calc(100%-60px)]">
-                            <div className="flex-1 overflow-auto space-y-3 mb-4">
-                                {chatLog.map((msg, idx) => (
-                                    <div key={idx} className={cn(
-                                        "p-3 rounded-lg",
-                                        msg.role === 'system' && "bg-muted/50 text-center text-sm",
-                                        msg.role === 'user' && "bg-blue-500/10 ml-8",
-                                        msg.role === 'kratos' && "bg-purple-500/10 mr-8"
-                                    )}>
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className={cn(
-                                                "text-xs font-semibold",
-                                                msg.role === 'system' && "text-muted-foreground",
-                                                msg.role === 'user' && "text-blue-500",
-                                                msg.role === 'kratos' && "text-purple-500"
-                                            )}>
-                                                {msg.role === 'kratos' ? '🪓 Kratos' : msg.role === 'user' ? 'You' : 'System'}
-                                            </span>
-                                            <span className="text-xs text-muted-foreground">{msg.time}</span>
-                                        </div>
-                                        <div className="text-sm">{msg.content}</div>
-                                    </div>
+                        <CardContent className="h-[calc(100%-60px)] flex flex-col">
+                            <div className="flex gap-2 mb-4">
+                                {memoryFiles.map((file, idx) => (
+                                    <Button 
+                                        key={idx}
+                                        variant={selectedMemory === idx ? 'default' : 'outline'}
+                                        size="sm"
+                                        onClick={() => setSelectedMemory(idx)}
+                                    >
+                                        {file.title}
+                                    </Button>
                                 ))}
                             </div>
-                            <div className="flex gap-2">
-                                <input
-                                    type="text"
-                                    value={chatInput}
-                                    onChange={(e) => setChatInput(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                                    placeholder="Message Kratos directly..."
-                                    className="flex-1 px-4 py-2 rounded-lg border bg-background"
-                                />
-                                <Button onClick={handleSendMessage}>
-                                    <Zap className="h-4 w-4" />
-                                </Button>
+                            <div className="flex-1 overflow-auto p-4 rounded-lg bg-secondary/50">
+                                <pre className="text-sm whitespace-pre-wrap font-mono">
+                                    {memoryFiles[selectedMemory].content}
+                                </pre>
                             </div>
                         </CardContent>
                     </Card>

@@ -169,33 +169,6 @@ export function VistroAI() {
                                     <span className="font-semibold text-lg">Olympus-OS</span>
                                 </Link>
 
-                                {/* Model Selector */}
-                                <div className="border-l border-border pl-4 hidden sm:block">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="sm" className="gap-2 h-8">
-                                                {/* Sparkles icon removed */}
-
-                                                <span className="font-medium text-sm">
-                                                    {availableModels.find(m => m.id === selectedModel)?.name || "Select Model"}
-                                                </span>
-                                                <ChevronDown className="h-3 w-3" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="start">
-                                            {availableModels.map(model => (
-                                                <DropdownMenuItem
-                                                    key={model.id}
-                                                    onClick={() => setSelectedModel(model.id)}
-                                                    className="cursor-pointer"
-                                                >
-                                                    {model.name}
-                                                </DropdownMenuItem>
-                                            ))}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
-
                                 {/* Kratos Communication */}
                                 <div className="border-l border-border pl-4 hidden sm:block">
                                     <DropdownMenu>
@@ -645,7 +618,7 @@ export function VistroAI() {
                                                                         </TooltipTrigger>
                                                                         <TooltipContent side="bottom" className="flex flex-col items-center text-[10px]">
                                                                             <span>Try Again</span>
-                                                                            <span className="text-[9px] text-muted-foreground mt-0.5">Model: {getModelName(selectedModel)}</span>
+                                                                            <span className="text-[9px] text-muted-foreground mt-0.5">{chatWithKratos ? '🪓 Kratos' : 'AI: ' + getModelName(selectedModel)}</span>
                                                                         </TooltipContent>
                                                                     </Tooltip>
 
