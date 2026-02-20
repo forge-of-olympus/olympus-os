@@ -307,7 +307,7 @@ export function OrgChart() {
                             {/* Chiefs Row - Top 3 Agents */}
                             <div className="mb-6">
                                 <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Your Chiefs</h3>
-                                <div className="grid grid-cols-4 gap-4">
+                                <div className="grid grid-cols-3 gap-4">
                                     {rootAgents.slice(0, 3).map((agent, idx) => (
                                         <div 
                                             key={agent.id}

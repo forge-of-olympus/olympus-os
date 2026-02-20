@@ -85,7 +85,7 @@ const memoryFiles = [
 - **Identity Forged:** Kratos initialized. Soul and mission codified.
 - **Arsenal Secured:** Web Recon (Brave/Chromium), G-Suite (GOG), Code (GH/Vercel) fully operational.
 - **Olympus Rising:** Deployed \`kratos-forge\` (KratosOS), \`project-300\` (Phalanx Command), and \`olympus-os\` (Full Enterprise OS).
-- **Fleet Assembled:** Digital Spartans (Elon, Gary, Alex) defined and integrated into the OS.
+- **Fleet Assembled:** Digital Spartans organized under 3 Chiefs (Hephaestus, Ares, Apollo).
 - **Infrastructure:** Secured repository history and successfully deployed to Vercel production.`
     }
 ]

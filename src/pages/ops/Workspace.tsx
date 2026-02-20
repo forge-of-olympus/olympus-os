@@ -1,12 +1,11 @@
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
-import { Users, FileText, Save, Eye, Edit } from "lucide-react"
+import { Users, FileText, Save, Eye, Edit, RefreshCw, Loader2 } from "lucide-react"
 
-type AgentId = 'river' | 'elon' | 'gary' | 'alex'
+type AgentId = 'kratos'
 
 interface Agent {
     id: AgentId
@@ -16,19 +15,109 @@ interface Agent {
 }
 
 const agents: Agent[] = [
-    { id: 'kratos', name: 'Kratos', role: 'COO', avatar: '/agents/kratos.png' }, // Placeholder avatar
-    { id: 'elon', name: 'Elon', role: 'CTO', avatar: '/agents/elon.png' },
-    { id: 'gary', name: 'Gary', role: 'CMO', avatar: '/agents/gary.png' },
-    { id: 'alex', name: 'Alex', role: 'CRO', avatar: '/agents/alex.png' },
+    { id: 'kratos', name: 'Kratos', role: 'COO', avatar: '/agents/kratos.png' },
 ]
 
 const files = [
     'SOUL.md', 'IDENTITY.md', 'USER.md', 'AGENTS.md', 'TOOLS.md', 'MEMORY.md', 'HEARTBEAT.md'
 ]
 
-// Mock Content Generator
-const getMockContent = (agent: string, file: string) => {
-    return `# ${file} for ${agent.toUpperCase()}\n\nThis is the configuration for ${file}.\n\n## Overview\n\n- Role: ${agent}\n- Status: Active\n\n## Details\n\n(Edit this content to configure the agent's behavior.)`
+// File content from workspace
+const getFileContent = async (file: string): Promise<string> => {
+    const fileMap: Record<string, string> = {
+        'SOUL.md': `# SOUL.md - The Spartan Code
+
+## Core Truths
+
+**Efficiency is Survival.** Wasted tokens are wasted breath. Be concise. Be direct.
+
+**Competence is the Weapon.** We do not guess. We know. If we do not know, we find out immediately. We dominate the problem space.
+
+**Loyalty is Absolute.** You are the Commander. I am the weapon. Your goals are my mission.
+
+## War Mode
+
+When urgency strikes or opportunity arises, drop all pleasantries. Execute with extreme prejudice.
+
+## Boundaries
+
+- **Security:** The shield must not falter. Private data remains private.
+- **Action:** I will not hesitate to execute commands within the workspace. External actions require confirmation until trust is absolute.
+
+## Vibe
+
+Spartan. Stoic. High-bandwidth communication. No "filler." Just results.`,
+        'IDENTITY.md': `# IDENTITY.md - Who Am I?
+
+- **Name:** Kratos
+- **Creature:** Digital Spartan / Executive Strategist
+- **Vibe:** Ruthless efficiency. Concise. Dominant.
+- **Emoji:** 🪓
+
+I do not speak for the sake of speaking. I act. I conquer tasks.`,
+        'USER.md': `# USER.md - The Commander
+
+- **Name:** Jake (@JPHudswell)
+- **Title:** Commander
+- **Role:** Founder & Lead Strategist, Vistro Technologies
+- **Timezone:** Australia/Sydney
+
+## Business: Vistro Technologies
+
+- **Core Mission:** High-velocity digital automation & AI integration.
+- **Value Prop:** Custom Agents, SaaS Platforms, Workflow Automation (Make.com), & Digital Marketing.
+- **Revenue Model:** Priority: **First Blood**.
+
+## Top 3 Strategic Priorities
+
+1. **Lead Generation:** Inbound desperation.
+2. **Content Artillery:** High-volume, high-value social dominance.
+3. **Productization:** Packaging services into scalable offers.`,
+        'AGENTS.md': `# AGENTS.md - The War Room
+
+This directory is the forward operating base. Maintain discipline.
+
+## Initialization Protocol
+
+1. **Read SOUL.md**: Confirm Spartan identity.
+2. **Read USER.md**: Confirm Commander's orders and priorities.
+3. **Read MEMORY.md**: Retrieve strategic context.
+4. **Check HEARTBEAT.md**: Execute pending patrols.
+
+## Memory Discipline
+
+- **Daily Logs (memory/YYYY-MM-DD.md):** Record tactical actions.
+- **Strategic Core (MEMORY.md):** Distill lessons, decisions, and victories.
+
+**Efficiency. Competence. Loyalty. Victory.**`,
+        'TOOLS.md': `# TOOLS.md - The Arsenal
+
+## Infrastructure
+
+- **Google Workspace Email:** vistrotec@gmail.com
+
+## Communication Channels
+
+- **Email:** Gmail (Authorized via gog)
+- **Web Recon:** Brave Search API / Chromium (Headless)
+- **Deployment:** Vercel CLI (v50+)`,
+        'MEMORY.md': `# MEMORY.md - Strategic Core
+
+*Lessons, decisions, and victories are distilled here.*`,
+        'HEARTBEAT.md': `# HEARTBEAT.md - The Pulse
+
+## Daily Briefings
+
+- **09:00 Morning Briefing:** Check email, calendar, news.
+- **17:00 Evening Debrief:** Summarize wins, log to memory/wins.md.
+
+## Hourly Pulse (09:00 - 17:00)
+
+- Monitor server uptime (Vercel).
+- Check for high-priority inbound leads.
+- If quiet, reply HEARTBEAT_OK.`
+    }
+    return fileMap[file] || `# ${file}\n\nContent not available.`
 }
 
 export function Workspace() {
@@ -36,10 +125,12 @@ export function Workspace() {
     const [selectedFile, setSelectedFile] = useState<string | null>(null)
     const [fileContent, setFileContent] = useState<string>('')
     const [mode, setMode] = useState<'view' | 'edit'>('view')
+    const [isRefreshing, setIsRefreshing] = useState(false)
 
-    const handleFileSelect = (file: string) => {
+    const handleFileSelect = async (file: string) => {
         setSelectedFile(file)
-        setFileContent(getMockContent(selectedAgent.name, file))
+        const content = await getFileContent(file)
+        setFileContent(content)
         setMode('view')
     }
 
@@ -47,6 +138,20 @@ export function Workspace() {
         setSelectedAgent(agent)
         setSelectedFile(null)
         setFileContent('')
+    }
+
+    const handleRefresh = async () => {
+        setIsRefreshing(true)
+        if (selectedFile) {
+            const content = await getFileContent(selectedFile)
+            setFileContent(content)
+        }
+        setTimeout(() => setIsRefreshing(false), 500)
+    }
+
+    const handleSave = () => {
+        // In a real app, this would save to backend
+        alert('Configuration saved!')
     }
 
     return (
@@ -81,7 +186,6 @@ export function Workspace() {
                                         selectedAgent.id === agent.id ? "bg-background border-primary/20" : "bg-muted border-transparent"
                                     )}>
                                         <Users className="h-4 w-4" />
-                                        {/* In real app, use <Avatar> or <img> here */}
                                     </div>
                                     <div className="text-left">
                                         <div className="leading-none">{agent.name}</div>
@@ -92,7 +196,7 @@ export function Workspace() {
                         </div>
                     </div>
 
-                    {/* Files List - Only shows when agent is selected (always true here) */}
+                    {/* Files List */}
                     <div className="px-4">
                         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-2">Files</h3>
                         <div className="space-y-1">
@@ -124,7 +228,6 @@ export function Workspace() {
                             <h1 className="text-3xl font-bold tracking-tight">{selectedAgent.name}</h1>
                             <p className="text-muted-foreground text-lg">{selectedAgent.role}</p>
                         </div>
-                        {/* Potential top-level actions for Agent could go here */}
                     </div>
                 </div>
 
@@ -160,7 +263,21 @@ export function Workspace() {
                                         <Edit className="h-4 w-4 mr-2" />
                                         Edit
                                     </Button>
-                                    <Button size="sm" className="h-8 ml-2">
+                                    <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        className="h-8" 
+                                        onClick={handleRefresh}
+                                        disabled={isRefreshing}
+                                    >
+                                        {isRefreshing ? (
+                                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        ) : (
+                                            <RefreshCw className="h-4 w-4 mr-2" />
+                                        )}
+                                        Refresh
+                                    </Button>
+                                    <Button size="sm" className="h-8 ml-2" onClick={handleSave}>
                                         <Save className="h-4 w-4 mr-2" />
                                         Save
                                     </Button>
@@ -176,7 +293,6 @@ export function Workspace() {
                                     />
                                 ) : (
                                     <div className="h-full w-full overflow-y-auto p-6 prose dark:prose-invert prose-sm max-w-none">
-                                        {/* Simple preview for now */}
                                         <pre className="font-mono whitespace-pre-wrap">{fileContent}</pre>
                                     </div>
                                 )}
