@@ -110,6 +110,11 @@ export function Brain() {
     })
 
     const [selectedMemory, setSelectedMemory] = useState(0)
+    const [memoryKey, setMemoryKey] = useState(0) // Used to force refresh
+
+    const handleMemoryRefresh = () => {
+        setMemoryKey(prev => prev + 1)
+    }
 
     const handleConfigChange = (key: keyof KratosConfig, value: any) => {
         setConfig(prev => ({ ...prev, [key]: value }))
@@ -201,7 +206,7 @@ export function Brain() {
                                     <FileText className="h-5 w-5" />
                                     Kratos Memory
                                 </CardTitle>
-                                <Button variant="outline" size="sm" onClick={() => setSelectedMemory(selectedMemory)}>
+                                <Button variant="outline" size="sm" onClick={handleMemoryRefresh}>
                                     <RefreshCw className="h-4 w-4 mr-2" />
                                     Refresh
                                 </Button>

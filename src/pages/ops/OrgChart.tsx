@@ -222,11 +222,11 @@ export function OrgChart() {
                             <div className="text-xs text-muted-foreground uppercase">Commander</div>
                         </div>
                         <div className="text-center p-4 rounded-xl border border-border">
-                            <div className="text-3xl font-bold">{rootAgents.filter(a => getChildAgents(a.id).length > 0).length}</div>
+                            <div className="text-3xl font-bold">{rootAgents.length}</div>
                             <div className="text-xs text-muted-foreground uppercase">Chiefs</div>
                         </div>
                         <div className="text-center p-4 rounded-xl border border-border">
-                            <div className="text-3xl font-bold">{agents.filter(a => a.parentId).length} <span className="text-lg text-muted-foreground">/ {rootAgents.filter(a => getChildAgents(a.id).length > 0).length}</span></div>
+                            <div className="text-3xl font-bold">{agents.filter(a => a.parentId).length}</div>
                             <div className="text-xs text-muted-foreground uppercase">Total Agents</div>
                         </div>
                         <div className="text-center p-4 rounded-xl border border-border">
