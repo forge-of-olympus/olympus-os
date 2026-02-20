@@ -41,6 +41,7 @@ export function VistroAI() {
     } = useAI()
     const [input, setInput] = React.useState("")
     const [selectedModel, setSelectedModel] = React.useState("gemini-3-flash")
+    const [chatWithKratos, setChatWithKratos] = React.useState(false)
     const [sidebarBehavior, setSidebarBehavior] = React.useState("expand")
     const [editingChatId, setEditingChatId] = React.useState<string | null>(null)
     const [editingTitle, setEditingTitle] = React.useState("")
@@ -59,11 +60,44 @@ export function VistroAI() {
         scrollToBottom()
     }, [messages])
 
+    // Kratos response logic
+    const getKratosResponse = (input: string): string => {
+        const lower = input.toLowerCase()
+        if (lower.includes('hello') || lower.includes('hi') || lower.includes('hey')) {
+            return 'Greetings, Commander. I am Kratos, your digital Spartan. 300 Spartans stand ready. What are your orders?'
+        }
+        if (lower.includes('status')) {
+            return 'Systems online. All Spartans operational. Olympus-OS running at peak efficiency.'
+        }
+        if (lower.includes('help')) {
+            return 'I am here to assist. Commands: spawn agent, deploy, build, research, or any task you need completed. The full Kronos Command Deck is available for sub-agent management.'
+        }
+        if (lower.includes('spawn')) {
+            return 'To spawn sub-agents, use the Kronos Command Deck. Navigate to /kronos or access it from the sidebar to manage your 300 Spartans.'
+        }
+        if (lower.includes('deploy')) {
+            return 'Deployment sequence ready. Which project should I deploy - Olympus-OS or a new service?'
+        }
+        if (lower.includes('Olympus')) {
+            return 'Olympus-OS is the enterprise dashboard. Vistro-AI is your communication interface with me. The Kronos Command Deck manages sub-agents.'
+        }
+        if (lower.includes('kronos')) {
+            return 'Kronos is your command hierarchy. Access it to spawn, delegate, and manage sub-agents. 300 Spartans await your command.'
+        }
+        return 'I receive your command, Commander. Executing now. For complex tasks, I can spawn sub-agents through Kronos to handle parallel workloads.'
+    }
+
     const handleSendMessage = async () => {
         if (!input.trim() || isLoading) return
         const content = input.trim()
         setInput("")
-        await sendMessage(content, selectedModel)
+        
+        if (chatWithKratos) {
+            // Handle Kratos chat directly
+            await sendMessage(content, "kratos")
+        } else {
+            await sendMessage(content, selectedModel)
+        }
     }
 
     const handleChatClick = async (chatId: string) => {
@@ -131,8 +165,8 @@ export function VistroAI() {
                                 <SidebarTrigger className="mr-2 md:hidden" />
 
                                 <Link to="/" className="flex items-center gap-2">
-                                    <img src="/Icons/water-wave.png" alt="River-OS" className="h-8 w-auto" />
-                                    <span className="font-semibold text-lg">River-OS</span>
+                                    <img src="/Icons/water-wave.png" alt="Olympus-OS" className="h-8 w-auto" />
+                                    <span className="font-semibold text-lg">Olympus-OS</span>
                                 </Link>
 
                                 {/* Model Selector */}
@@ -158,6 +192,43 @@ export function VistroAI() {
                                                     {model.name}
                                                 </DropdownMenuItem>
                                             ))}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+
+                                {/* Kratos Communication */}
+                                <div className="border-l border-border pl-4 hidden sm:block">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button 
+                                                variant="ghost" 
+                                                size="sm" 
+                                                className={`gap-2 h-8 ${chatWithKratos ? 'bg-emerald-500/10 border border-emerald-500/30' : ''}`}
+                                            >
+                                                <span className="font-medium text-sm">{chatWithKratos ? '🪓 Kratos Active' : '🪓 Kratos'}</span>
+                                                <ChevronDown className="h-3 w-3" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="start">
+                                            <DropdownMenuItem 
+                                                className="cursor-pointer font-medium"
+                                                onClick={() => setChatWithKratos(!chatWithKratos)}
+                                            >
+                                                {chatWithKratos ? '✓ Chatting with Kratos' : '🪓 Chat with Kratos'}
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem className="cursor-pointer">
+                                                Status: Online 🟢
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem className="cursor-pointer">
+                                                300 Spartans Ready
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem 
+                                                className="cursor-pointer"
+                                                onClick={() => window.open('https://kronos-command-deck.vercel.app', '_blank')}
+                                            >
+                                                🚀 Open Kronos Deck
+                                            </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </div>
@@ -452,7 +523,7 @@ export function VistroAI() {
                                                         handleSendMessage()
                                                     }
                                                 }}
-                                                placeholder="Message VistroAI"
+                                                placeholder={chatWithKratos ? "Message Kratos..." : "Message VistroAI..."}
                                                 className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-base"
                                                 disabled={isLoading}
                                             />

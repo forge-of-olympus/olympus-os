@@ -106,6 +106,51 @@ export const AIContextProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const sendMessage = useCallback(async (content: string, model: string = 'gemini-3-flash') => {
         if (!content.trim()) return
 
+        // Handle Kratos special model
+        if (model === 'kratos') {
+            const kratosResponses: Record<string, string> = {
+                'hello': 'Greetings, Commander. I am Kratos, your digital Spartan. 300 Spartans stand ready. What are your orders?',
+                'hi': 'Greetings, Commander. I am Kratos, your digital Spartan. 300 Spartans stand ready. What are your orders?',
+                'hey': 'Greetings, Commander. I am Kratos, your digital Spartan. 300 Spartans stand ready. What are your orders?',
+                'status': 'Systems online. All Spartans operational. Olympus-OS running at peak efficiency. 300 Spartans ready for deployment.',
+                'help': 'I am here to assist. Commands: spawn agent, deploy, build, research, or any task you need completed. The full Kronos Command Deck is available for sub-agent management.',
+                'spawn': 'To spawn sub-agents, use the Kronos Command Deck. Navigate to /kronos or access it from the sidebar to manage your 300 Spartans.',
+                'deploy': 'Deployment sequence ready. Which project should I deploy - Olympus-OS or a new service?',
+                'olympus': 'Olympus-OS is the enterprise dashboard. Vistro-AI is your communication interface with me. The Kronos Command Deck manages sub-agents.',
+                'kronos': 'Kronos is your command hierarchy. Access it to spawn, delegate, and manage sub-agents. 300 Spartans await your command.',
+                'default': 'I receive your command, Commander. Executing now. For complex tasks, I can spawn sub-agents through Kronos to handle parallel workloads.'
+            }
+
+            const userMessage: AIMessage = {
+                id: Date.now().toString(),
+                role: 'user',
+                content: content.trim(),
+                timestamp: Date.now()
+            }
+            setMessages(prev => [...prev, userMessage])
+
+            // Simulate thinking delay
+            await new Promise(resolve => setTimeout(resolve, 800))
+
+            const lowerContent = content.toLowerCase()
+            let response = kratosResponses.default
+            for (const [key, value] of Object.entries(kratosResponses)) {
+                if (lowerContent.includes(key) && key !== 'default') {
+                    response = value
+                    break
+                }
+            }
+
+            const assistantMessage: AIMessage = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: response,
+                timestamp: Date.now()
+            }
+            setMessages(prev => [...prev, assistantMessage])
+            return
+        }
+
         // 1. Load API keys from localStorage
         let apiKeys: { gemini?: string; openai?: string; anthropic?: string } = {}
         try {
