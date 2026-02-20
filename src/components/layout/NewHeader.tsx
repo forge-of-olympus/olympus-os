@@ -30,8 +30,8 @@ export function NewHeader({ onAIAssistantToggle }: NewHeaderProps) {
                         <SidebarTrigger className="mr-2 md:hidden" />
 
                         <Link to="/" className="flex items-center gap-2">
-                            <img src="/Icons/water-wave.png" alt="River-OS" className="h-8 w-auto" />
-                            <span className="font-semibold text-lg">River-OS</span>
+                            <img src="/Icons/water-wave.png" alt="Olympus-OS" className="h-8 w-auto" />
+                            <span className="font-semibold text-lg">Olympus-OS</span>
                         </Link>
                     </div>
 
