@@ -166,11 +166,62 @@ export function AIAssistantSidebar({ open, onOpenChange }: { open: boolean; onOp
         }
     }
 
+    // Kratos responses for sidebar
+    const kratosResponses: Record<string, string> = {
+        'hello': 'Greetings, Commander. I am Kratos, your digital Spartan. How may I serve you?',
+        'hi': 'Greetings, Commander. I am Kratos, your digital Spartan. How may I serve you?',
+        'status': 'All systems operational. 300 Spartans ready for deployment. Olympus-OS running at peak efficiency.',
+        'help': 'I am here to assist. Use the Org Chart to manage Spartans, Brain to configure me, or VistroAI for complex AI tasks.',
+        'spawn': 'To spawn sub-agents, navigate to Ops → Org Chart and use the Spawn controls.',
+        'deploy': 'Deployment sequence ready. Which project should I deploy?',
+        'olympus': 'Olympus-OS is the enterprise dashboard. Vistro-AI handles AI tasks, the Org Chart manages Spartans.',
+        'kronos': 'Kronos is your command hierarchy. Access it through Ops → Org Chart.',
+        'default': 'I receive your command, Commander. Executing now. For complex tasks, use VistroAI or the Org Chart.'
+    }
+
+    const getKratosResponse = (input: string): string => {
+        const lower = input.toLowerCase()
+        for (const [key, response] of Object.entries(kratosResponses)) {
+            if (lower.includes(key)) return response
+        }
+        return kratosResponses.default
+    }
+
     const handleSendMessage = async () => {
         if (!inputValue.trim() || isLoading) return
         const content = inputValue.trim()
         setInputValue("")
-        await sendMessage(content, selectedModel.id)
+        setIsLoading(true)
+
+        // Add user message
+        const userMsg: typeof messages[0] = {
+            id: Date.now().toString(),
+            role: 'user',
+            content: content,
+            timestamp: Date.now()
+        }
+        const updatedMessages = [...messages, userMsg]
+        setMessages(updatedMessages)
+
+        // Sync to localStorage for VistroAI Kratos mode
+        localStorage.setItem('kratos-chat', JSON.stringify(updatedMessages))
+
+        // Get Kratos response
+        await new Promise(resolve => setTimeout(resolve, 800))
+        const response = getKratosResponse(content)
+        
+        const assistantMsg: typeof messages[0] = {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: response,
+            timestamp: Date.now()
+        }
+        const finalMessages = [...updatedMessages, assistantMsg]
+        setMessages(finalMessages)
+        
+        // Sync to localStorage for VistroAI Kratos mode
+        localStorage.setItem('kratos-chat', JSON.stringify(finalMessages))
+        setIsLoading(false)
     }
 
     const handleIdeaClick = (idea: string) => {
@@ -315,14 +366,6 @@ export function AIAssistantSidebar({ open, onOpenChange }: { open: boolean; onOp
                             onClick={createNewChat}
                         >
                             <Plus className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground"
-                            onClick={() => setShowSettings(true)}
-                        >
-                            <Settings className="h-4 w-4" />
                         </Button>
                         <Button
                             variant="ghost"
@@ -586,9 +629,6 @@ export function AIAssistantSidebar({ open, onOpenChange }: { open: boolean; onOp
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
-
-                {/* Settings Panel */}
-                <AISettingsPanel open={showSettings} onOpenChange={setShowSettings} />
 
                 <AIShareModal
                     open={shareModalOpen}

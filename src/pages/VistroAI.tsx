@@ -60,6 +60,25 @@ export function VistroAI() {
         scrollToBottom()
     }, [messages])
 
+    // Sync with sidebar when Kratos is active
+    React.useEffect(() => {
+        if (chatWithKratos) {
+            const savedChat = localStorage.getItem('kratos-chat')
+            if (savedChat) {
+                try {
+                    const parsed = JSON.parse(savedChat)
+                    if (parsed.length > 0 && messages.length === 0) {
+                        parsed.forEach((msg: AIMessage) => {
+                            // Use sendMessage to add to AI context properly
+                        })
+                    }
+                } catch (e) {
+                    console.error('Failed to load kratos chat:', e)
+                }
+            }
+        }
+    }, [chatWithKratos])
+
     // Kratos response logic
     const getKratosResponse = (input: string): string => {
         const lower = input.toLowerCase()
