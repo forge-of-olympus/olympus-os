@@ -225,9 +225,9 @@ export function VistroAI() {
                                             </DropdownMenuItem>
                                             <DropdownMenuItem 
                                                 className="cursor-pointer"
-                                                onClick={() => window.open('https://kronos-command-deck.vercel.app', '_blank')}
+                                                onClick={() => window.location.href = '/brain'}
                                             >
-                                                🚀 Open Kronos Deck
+                                                🧠 Open Brain Page
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>

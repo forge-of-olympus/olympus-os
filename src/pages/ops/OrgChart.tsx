@@ -282,6 +282,58 @@ export function OrgChart() {
                                 </select>
                             </div>
 
+                            {/* Captains Row - Top 4 Agents */}
+                            <div className="mb-6">
+                                <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Your Captains</h3>
+                                <div className="grid grid-cols-4 gap-4">
+                                    {rootAgents.slice(0, 4).map((agent, idx) => (
+                                        <div 
+                                            key={agent.id}
+                                            className={cn(
+                                                "p-4 rounded-xl border cursor-pointer transition-all",
+                                                selectedAgent?.id === agent.id 
+                                                    ? "border-emerald-500 bg-emerald-500/10" 
+                                                    : "border-border hover:border-emerald-500/50"
+                                            )}
+                                            onClick={() => setSelectedAgent(agent)}
+                                        >
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center text-lg font-bold", 
+                                                    agent.type === 'general' && "bg-blue-500/20 text-blue-500",
+                                                    agent.type === 'coding' && "bg-purple-500/20 text-purple-500",
+                                                    agent.type === 'research' && "bg-green-500/20 text-green-500",
+                                                    agent.type === 'builder' && "bg-orange-500/20 text-orange-500"
+                                                )}>
+                                                    {agentTypes.find(t => t.type === agent.type)?.icon || '◈'}
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold">{agent.name}</div>
+                                                    <div className="text-xs text-muted-foreground">Captain #{idx + 1}</div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className={cn("text-xs px-2 py-0.5 rounded-full uppercase",
+                                                    agent.status === 'idle' && "bg-green-500/20 text-green-500",
+                                                    agent.status === 'working' && "bg-yellow-500/20 text-yellow-500",
+                                                    agent.status === 'completed' && "bg-blue-500/20 text-blue-500"
+                                                )}>{agent.status}</span>
+                                                <span className="text-xs text-muted-foreground">{agent.completedTasks} tasks</span>
+                                            </div>
+                                            {agent.currentTaskProgress && (
+                                                <div>
+                                                    <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+                                                        <div className="h-full bg-emerald-500" style={{ width: `${agent.currentTaskProgress}%` }} />
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <div className="text-xs text-muted-foreground mt-2">
+                                                {getChildAgents(agent.id).length} Sub-agents
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
                             {/* Kratos Root */}
                             <div className="flex items-center gap-4 p-4 rounded-xl border-2 border-emerald-500 bg-emerald-500/10 mb-6">
                                 <div className="w-16 h-16 rounded-xl flex items-center justify-center text-3xl bg-emerald-500/20">
@@ -293,9 +345,22 @@ export function OrgChart() {
                                 </div>
                             </div>
 
-                            {/* Hierarchy Tree */}
+                            {/* Hierarchy Tree - Sub-agents under captains */}
                             <div>
-                                {rootAgents.map(agent => renderHierarchyNode(agent))}
+                                <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Sub-Agents</h3>
+                                {rootAgents.slice(0, 4).map(agent => {
+                                    const subAgents = getChildAgents(agent.id)
+                                    if (subAgents.length === 0) return null
+                                    return (
+                                        <div key={agent.id} className="mb-4">
+                                            <div className="text-sm font-medium mb-2 flex items-center gap-2">
+                                                <span className="text-emerald-500">→</span> 
+                                                {agent.name}'s Division ({subAgents.length})
+                                            </div>
+                                            {subAgents.map(child => renderHierarchyNode(child, 0))}
+                                        </div>
+                                    )
+                                })}
                             </div>
                         </div>
                     )}
