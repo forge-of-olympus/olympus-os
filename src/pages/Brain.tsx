@@ -196,10 +196,16 @@ export function Brain() {
                     {/* Memory Files */}
                     <Card className="h-[500px] overflow-hidden">
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <FileText className="h-5 w-5" />
-                                Kratos Memory
-                            </CardTitle>
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="flex items-center gap-2">
+                                    <FileText className="h-5 w-5" />
+                                    Kratos Memory
+                                </CardTitle>
+                                <Button variant="outline" size="sm" onClick={() => setSelectedMemory(selectedMemory)}>
+                                    <RefreshCw className="h-4 w-4 mr-2" />
+                                    Refresh
+                                </Button>
+                            </div>
                         </CardHeader>
                         <CardContent className="h-[calc(100%-60px)] flex flex-col">
                             <div className="flex gap-2 mb-4">
