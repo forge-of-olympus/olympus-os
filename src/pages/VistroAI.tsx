@@ -169,6 +169,31 @@ export function VistroAI() {
                                     <span className="font-semibold text-lg">Olympus-OS</span>
                                 </Link>
 
+                                {/* AI Model Selector */}
+                                <div className="border-l border-border pl-4 hidden sm:block">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="sm" className="gap-2 h-8">
+                                                <span className="font-medium text-sm">
+                                                    {availableModels.find(m => m.id === selectedModel)?.name || "Select Model"}
+                                                </span>
+                                                <ChevronDown className="h-3 w-3" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="start">
+                                            {availableModels.map(model => (
+                                                <DropdownMenuItem
+                                                    key={model.id}
+                                                    onClick={() => { setSelectedModel(model.id); setChatWithKratos(false); }}
+                                                    className="cursor-pointer"
+                                                >
+                                                    {model.name}
+                                                </DropdownMenuItem>
+                                            ))}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+
                                 {/* Kratos Communication */}
                                 <div className="border-l border-border pl-4 hidden sm:block">
                                     <DropdownMenu>

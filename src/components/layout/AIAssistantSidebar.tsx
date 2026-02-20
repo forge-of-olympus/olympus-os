@@ -535,33 +535,11 @@ export function AIAssistantSidebar({ open, onOpenChange }: { open: boolean; onOp
                             onKeyDown={handleKeyDown}
                         />
                         <div className="flex items-center justify-between p-2 pt-0">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5 font-normal bg-background/50 border-muted-foreground/20 hover:bg-background">
-                                        {selectedModel.name} <ChevronDown className="h-3 w-3 opacity-50" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="start" className="w-64">
-                                    <DropdownMenuLabel>Select AI Model</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    {availableModels.map((model) => (
-                                        <DropdownMenuItem
-                                            key={model.id}
-                                            className="cursor-pointer flex-col items-start py-3"
-                                            onClick={() => setSelectedModel(model)}
-                                        >
-                                            <div className="flex items-center w-full gap-2">
-                                                {selectedModel.id === model.id && <Check className="h-4 w-4 shrink-0" />}
-                                                {selectedModel.id !== model.id && <div className="h-4 w-4 shrink-0" />}
-                                                <span className="font-medium">{model.name}</span>
-                                            </div>
-                                            <p className="text-xs text-muted-foreground ml-6 mt-0.5">
-                                                {model.description}
-                                            </p>
-                                        </DropdownMenuItem>
-                                    ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                            {/* Kratos - Always Active in Sidebar */}
+                            <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/30">
+                                <span className="text-sm">🪓</span>
+                                <span className="text-xs font-medium text-emerald-500">Kratos Active</span>
+                            </div>
                             <Button
                                 size="icon"
                                 className="h-7 w-7 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white shadow-none"
