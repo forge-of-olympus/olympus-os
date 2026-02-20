@@ -61,19 +61,19 @@ const availableModels = [
 export function AIAssistantSidebar({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
     const {
         currentChatId,
-        messages,
         chatHistory,
-        isLoading,
-        sendMessage,
+        isLoading: aiLoading,
         loadChat,
         createNewChat,
         renameChat,
         deleteChat,
         logFeedback
     } = useAI()
+    const [messages, setMessages] = React.useState<{ id: string; role: 'user' | 'assistant'; content: string; timestamp: number }[]>([])
     const [searchQuery, setSearchQuery] = React.useState("")
     const [inputValue, setInputValue] = React.useState("")
-    const [selectedModel, setSelectedModel] = React.useState(availableModels[1])
+    const [isLoading, setIsLoading] = React.useState(false)
+    const selectedModel = { id: "kratos", name: "Kratos" }
     const [showSettings, setShowSettings] = React.useState(false)
     const [renamingChatId, setRenamingChatId] = React.useState<string | null>(null)
     const [renameValue, setRenameValue] = React.useState("")
@@ -533,14 +533,17 @@ export function AIAssistantSidebar({ open, onOpenChange }: { open: boolean; onOp
                                                                 variant="ghost"
                                                                 size="icon"
                                                                 className="h-7 w-7 text-foreground/70 hover:text-foreground transition-colors"
-                                                                onClick={() => sendMessage(messages[messages.findIndex(m => m.id === message.id) - 1]?.content || "", selectedModel.id)}
+                                                                onClick={() => {
+                                                                    const prevMsg = messages[messages.findIndex(m => m.id === message.id) - 1]
+                                                                    if (prevMsg) setInputValue(prevMsg.content)
+                                                                }}
                                                             >
                                                                 <RotateCcw className="h-4 w-4" />
                                                             </Button>
                                                         </TooltipTrigger>
                                                         <TooltipContent side="bottom" className="flex flex-col items-center text-center text-[10px]">
-                                                            <span>Try Again</span>
-                                                            <span className="text-[9px] text-muted-foreground mt-0.5">Model: {getModelName(selectedModel.id)}</span>
+                                                            <span>Copy</span>
+                                                            <span className="text-[9px] text-muted-foreground mt-0.5">🪓 Kratos</span>
                                                         </TooltipContent>
                                                     </Tooltip>
 

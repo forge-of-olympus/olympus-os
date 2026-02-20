@@ -101,10 +101,9 @@ const agentTypes: { type: SubAgent['type']; label: string; icon: string; color: 
 
 export function OrgChart() {
     const [agents, setAgents] = useState<SubAgent[]>([
-        { ...createAgent('general', undefined, 'Athena'), status: 'working', lastTask: 'Coordinating Spartan forces', completedTasks: 47, currentTaskProgress: 65 },
         { ...createAgent('coding', undefined, 'Hephaestus'), status: 'working', lastTask: 'Building command interfaces', completedTasks: 23, currentTaskProgress: 80 },
-        { ...createAgent('research', undefined, 'Apollo'), status: 'idle', completedTasks: 89 },
-        { ...createAgent('builder', undefined, 'Ares'), status: 'completed', lastTask: 'Deploy Olympus-OS to production', completedTasks: 156 }
+        { ...createAgent('builder', undefined, 'Ares'), status: 'completed', lastTask: 'Deploy Olympus-OS to production', completedTasks: 156 },
+        { ...createAgent('research', undefined, 'Apollo'), status: 'idle', completedTasks: 89 }
     ])
     const [selectedAgent, setSelectedAgent] = useState<SubAgent | null>(null)
     const [commandInput, setCommandInput] = useState('')
@@ -120,7 +119,7 @@ export function OrgChart() {
         setStatusFeed([
             { id: '1', message: 'Command Hierarchy initialized', type: 'info', timestamp: new Date().toISOString() },
             { id: '2', message: '300 Spartans ready for deployment', type: 'success', timestamp: new Date().toISOString() },
-            { id: '3', message: 'Athena coordinating forces', type: 'info', timestamp: new Date(Date.now() - 1000).toISOString() }
+            { id: '3', message: 'Hephaestus coordinating build operations', type: 'info', timestamp: new Date(Date.now() - 1000).toISOString() }
         ])
     }, [])
 
@@ -227,7 +226,7 @@ export function OrgChart() {
                             <div className="text-xs text-muted-foreground uppercase">Chiefs</div>
                         </div>
                         <div className="text-center p-4 rounded-xl border border-border">
-                            <div className="text-3xl font-bold">{agents.length}</div>
+                            <div className="text-3xl font-bold">{agents.filter(a => a.parentId).length}</div>
                             <div className="text-xs text-muted-foreground uppercase">Total Agents</div>
                         </div>
                         <div className="text-center p-4 rounded-xl border border-border">
@@ -305,11 +304,11 @@ export function OrgChart() {
                                 </div>
                             </div>
 
-                            {/* Captains Row - Top 4 Agents */}
+                            {/* Chiefs Row - Top 3 Agents */}
                             <div className="mb-6">
-                                <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Your Captains</h3>
+                                <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Your Chiefs</h3>
                                 <div className="grid grid-cols-4 gap-4">
-                                    {rootAgents.slice(0, 4).map((agent, idx) => (
+                                    {rootAgents.slice(0, 3).map((agent, idx) => (
                                         <div 
                                             key={agent.id}
                                             className={cn(
@@ -331,7 +330,7 @@ export function OrgChart() {
                                                 </div>
                                                 <div>
                                                     <div className="font-bold">{agent.name}</div>
-                                                    <div className="text-xs text-muted-foreground">Captain #{idx + 1}</div>
+                                                    <div className="text-xs text-muted-foreground">Chief</div>
                                                 </div>
                                             </div>
                                             <div className="flex items-center justify-between mb-2">
@@ -360,7 +359,7 @@ export function OrgChart() {
                             {/* Hierarchy Tree - Sub-agents under captains */}
                             <div>
                                 <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Sub-Agents</h3>
-                                {rootAgents.slice(0, 4).map(agent => {
+                                {rootAgents.slice(0, 3).map(agent => {
                                     const subAgents = getChildAgents(agent.id)
                                     if (subAgents.length === 0) return null
                                     return (
