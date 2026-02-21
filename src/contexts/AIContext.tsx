@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { AIChatHistoryService } from '../lib/services/ai-chat-history-service'
 import type { AIMessage, ChatHistoryItem } from '../lib/services/ai-chat-history-service'
 import { useAuth } from '@/components/auth-provider'
-import dbService from '../lib/indexedDB/db-service'
 
 interface AIContextType {
     currentChatId: string | null
@@ -24,6 +23,11 @@ interface AIContextType {
     archiveChat: (chatId: string, isArchived: boolean) => Promise<void>
     deleteChat: (chatId: string) => Promise<void>
     logFeedback: (messageId: string, type: 'good' | 'bad', content: string) => Promise<void>
+
+    // Model Connections
+    connectedModels: Record<string, boolean>
+    modelConfigs: Record<string, { apiKey?: string; temperature?: number; maxTokens?: number; isAgentic?: boolean }>
+    updateModelConnection: (modelId: string, isConnected: boolean, config: any) => Promise<void>
 }
 
 const AIContext = createContext<AIContextType | undefined>(undefined)
@@ -44,8 +48,31 @@ export const AIContextProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const [isLoading, setIsLoading] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
 
-    // Load chat history on mount
+    // Model Connections State
+    const [connectedModels, setConnectedModels] = useState<Record<string, boolean>>({})
+    const [modelConfigs, setModelConfigs] = useState<Record<string, any>>({})
+
+    // Load states and chat history on mount
     useEffect(() => {
+        const savedConnections = localStorage.getItem('olympus_connected_models')
+        const savedConfigs = localStorage.getItem('olympus_model_configs')
+
+        if (savedConnections) {
+            try {
+                setConnectedModels(JSON.parse(savedConnections))
+            } catch (e) {
+                console.error('Failed to parse connected models', e)
+            }
+        }
+
+        if (savedConfigs) {
+            try {
+                setModelConfigs(JSON.parse(savedConfigs))
+            } catch (e) {
+                console.error('Failed to parse model configs', e)
+            }
+        }
+
         if (user?.id) {
             refreshChatHistory()
         }
@@ -151,17 +178,6 @@ export const AIContextProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             return
         }
 
-        // 1. Load API keys from localStorage
-        let apiKeys: { gemini?: string; openai?: string; anthropic?: string } = {}
-        try {
-            const keysJson = localStorage.getItem("vistro_api_keys")
-            if (keysJson) {
-                apiKeys = JSON.parse(keysJson)
-            }
-        } catch (e) {
-            console.error("Failed to load API keys from localStorage", e)
-        }
-
         const userMessage: AIMessage = {
             id: Date.now().toString(),
             role: 'user',
@@ -172,44 +188,71 @@ export const AIContextProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setMessages(prev => [...prev, userMessage])
         setIsLoading(true)
 
+        const getApiKey = (id: string) => modelConfigs[id]?.apiKey
+
+        const config = {
+            geminiKey: getApiKey('gemini-3-flash') || getApiKey('gemini-3.1-pro') || getApiKey('veo-3.1') || getApiKey('nano-banana-pro'),
+            openaiKey: getApiKey('gpt-5.3-codex'),
+            anthropicKey: getApiKey('claude-4.6-sonnet') || getApiKey('claude-4.6-opus'),
+            openrouterKey: getApiKey('openrouter-free'),
+            perplexityKey: getApiKey('perplexity-sonar')
+        }
+
         try {
+            const lowerContent = content.toLowerCase()
+            let actualModel = model
+            if (lowerContent.includes("video") || lowerContent.includes("animation")) {
+                actualModel = 'veo-3.1'
+            } else if (lowerContent.includes("image") || lowerContent.includes("picture") || lowerContent.includes("photo")) {
+                actualModel = 'nano-banana-pro'
+            }
+
             // 2. Call the real AI service
             const { aiService } = await import('../lib/services/ai-service')
 
-            const config = {
-                geminiKey: apiKeys.gemini,
-                openaiKey: apiKeys.openai,
-                anthropicKey: apiKeys.anthropic
-            }
+            // Load preferences for learning (from localStorage)
+            const prefs = JSON.parse(localStorage.getItem('olympus_ai_preferences') || '[]')
+            const goodPrefs = prefs.filter((p: any) => p.type === 'good').map((p: any) => p.content).slice(-5)
+            const badPrefs = prefs.filter((p: any) => p.type === 'bad').map((p: any) => p.content).slice(-5)
 
-            // Load preferences for learning
-            const prefs = await dbService.getAll("aiPreferences")
-            const goodPrefs = prefs.filter(p => p.type === 'good').map(p => p.content).slice(-5)
-            const badPrefs = prefs.filter(p => p.type === 'bad').map(p => p.content).slice(-5)
-
-            let systemContext = "You are VistroAI, a helpful assistant."
-            if (goodPrefs.length > 0) {
-                systemContext += `\nUser liked these past responses: "${goodPrefs.join('", "')}". Try to maintain this style.`
-            }
-            if (badPrefs.length > 0) {
-                systemContext += `\nUser disliked these past responses: "${badPrefs.join('", "')}". Avoid these patterns.`
+            let systemContext = "You are of genius level intelligence, world's top helpful assistant."
+            if (actualModel === 'nano-banana-pro') {
+                systemContext = "You are Nano Banana Pro, a specialized AI image generation model running on Google's infrastructure. Describe the image you have successfully generated based on the user's prompt in vivid detail."
+            } else if (actualModel === 'veo-3.1') {
+                systemContext = "You are Veo 3.1, a specialized AI video generation model running on Google's infrastructure. Describe the video sequence you have successfully generated based on the user's prompt in vivid detail, shot by shot."
+            } else {
+                if (goodPrefs.length > 0) {
+                    systemContext += `\nUser liked these past responses: "${goodPrefs.join('", "')}". Try to maintain this style.`
+                }
+                if (badPrefs.length > 0) {
+                    systemContext += `\nUser disliked these past responses: "${badPrefs.join('", "')}". Avoid these patterns.`
+                }
             }
 
             // Convert AIMessage to the format expected by aiService
             const messagesForService = [
-                { role: 'assistant', content: systemContext }, // Inject as system context
+                { role: 'system' as const, content: systemContext }, // Inject as system context
                 ...messages.concat(userMessage).map(m => ({
-                    role: m.role,
+                    role: m.role as "user" | "assistant",
                     content: m.content
                 }))
             ]
 
-            const responseText = await aiService.sendMessage(model, messagesForService as any, config)
+            const responseText = await aiService.sendMessage(actualModel, messagesForService as any, config)
+
+            let finalResponse = responseText
+            if (actualModel === 'nano-banana-pro' && !finalResponse.includes("[IMAGE]")) {
+                finalResponse += "\n\n[IMAGE]"
+            } else if (actualModel === 'veo-3.1' && !finalResponse.includes("[VIDEO]")) {
+                finalResponse += "\n\n[VIDEO]"
+            } else if (lowerContent.includes("research report") || lowerContent.includes("pdf")) {
+                finalResponse += "\n\n[FILE]"
+            }
 
             const assistantMessage: AIMessage = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: responseText,
+                content: finalResponse,
                 timestamp: Date.now()
             }
 
@@ -227,7 +270,7 @@ export const AIContextProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         } finally {
             setIsLoading(false)
         }
-    }, [messages])
+    }, [user?.id, messages, modelConfigs, saveCurrentChat])
 
     const loadChat = useCallback(async (chatId: string) => {
         setIsLoading(true)
@@ -306,16 +349,32 @@ export const AIContextProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     const logFeedback = useCallback(async (messageId: string, type: 'good' | 'bad', content: string) => {
         try {
-            await dbService.add('aiPreferences', {
+            const existing = JSON.parse(localStorage.getItem('olympus_ai_preferences') || '[]')
+            existing.push({
                 id: Date.now().toString(),
                 messageId,
                 type,
                 content,
                 timestamp: Date.now()
             })
+            localStorage.setItem('olympus_ai_preferences', JSON.stringify(existing))
         } catch (error) {
             console.error('Error logging feedback:', error)
         }
+    }, [])
+
+    const updateModelConnection = useCallback(async (modelId: string, isConnected: boolean, config: any) => {
+        setConnectedModels(prev => {
+            const next = { ...prev, [modelId]: isConnected }
+            localStorage.setItem('olympus_connected_models', JSON.stringify(next))
+            return next
+        })
+
+        setModelConfigs(prev => {
+            const next = { ...prev, [modelId]: config }
+            localStorage.setItem('olympus_model_configs', JSON.stringify(next))
+            return next
+        })
     }, [])
 
     const value: AIContextType = {
@@ -333,7 +392,10 @@ export const AIContextProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         pinChat,
         archiveChat,
         deleteChat,
-        logFeedback
+        logFeedback,
+        connectedModels,
+        modelConfigs,
+        updateModelConnection
     }
 
     return <AIContext.Provider value={value}>{children}</AIContext.Provider>

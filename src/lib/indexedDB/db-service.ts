@@ -23,6 +23,7 @@ class DBService {
      * @returns Promise that resolves when the database is initialized
      */
     init(): Promise<boolean> {
+        console.log("[DB] init() called. isInitialized:", this.isInitialized, "initPromise:", !!this.initPromise)
         if (this.isInitialized) {
             return Promise.resolve(true)
         }
@@ -32,6 +33,7 @@ class DBService {
         }
 
         this.initPromise = new Promise((resolve, reject) => {
+            console.log("[DB] Starting IndexedDB open request...")
             if (!window.indexedDB) {
                 logger.error("IndexedDB not supported in this browser")
                 reject(new Error("IndexedDB not supported"))
@@ -60,20 +62,49 @@ class DBService {
                 }
             }
 
+            request.onblocked = () => {
+                console.warn("[DB] onblocked fired")
+                logger.warn("Database initialization blocked. Close other tabs.")
+                // We resolve with false or throw error if it's completely stuck, but often it unblocks.
+                // Let's reject to avoid infinite hanging.
+                reject(new Error("Database upgrade blocked. Please close all other tabs of this app and refresh."))
+            }
+
             request.onsuccess = async (event: Event) => {
+                console.log("[DB] onsuccess fired")
                 const target = event.target as IDBOpenDBRequest
                 if (!target) return
                 this.db = target.result
+
+                // Add versionchange listener to close this connection if another tab tries to upgrade
+                this.db.onversionchange = () => {
+                    console.log("[DB] onversionchange fired - closing db")
+                    this.db?.close()
+                    this.db = null
+                    this.isInitialized = false
+                    this.initPromise = null
+                    logger.info("Database closed due to version change in another tab.")
+                }
+
                 this.isInitialized = true
+                console.log("[DB] isInitialized set to true")
                 logger.info("Database initialized successfully")
 
                 // Seed data if stores are empty
-                await this.seedDataIfEmpty()
+                console.log("[DB] Calling seedDataIfEmpty...")
+                try {
+                    await this.seedDataIfEmpty()
+                    console.log("[DB] seedDataIfEmpty completed")
+                } catch (err) {
+                    console.error("[DB] seedDataIfEmpty failed", err)
+                }
 
                 resolve(true)
+                console.log("[DB] Init Promise resolved")
             }
 
             request.onerror = (event: Event) => {
+                console.error("[DB] onerror fired")
                 const target = event.target as IDBOpenDBRequest
                 const errorMessage = target?.error ? String(target.error) : "Unknown error"
                 logger.error("Database initialization failed", errorMessage)

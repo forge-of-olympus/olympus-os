@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/badge"
-import { 
-    Brain as BrainIcon, 
-    Settings, 
-    Zap, 
-    Target, 
+import {
+    Brain as BrainIcon,
+    Settings,
+    Zap,
+    Target,
     Command,
     Shield,
     Cpu,
@@ -215,7 +215,7 @@ export function Brain() {
                         <CardContent className="h-[calc(100%-60px)] flex flex-col">
                             <div className="flex gap-2 mb-4">
                                 {memoryFiles.map((file, idx) => (
-                                    <Button 
+                                    <Button
                                         key={idx}
                                         variant={selectedMemory === idx ? 'default' : 'outline'}
                                         size="sm"
@@ -304,7 +304,7 @@ export function Brain() {
                             </div>
                             <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium">Auto-Deploy</span>
-                                <Button 
+                                <Button
                                     variant={config.autoDeploy ? "default" : "outline"}
                                     size="sm"
                                     onClick={() => handleConfigChange('autoDeploy', !config.autoDeploy)}
@@ -314,7 +314,7 @@ export function Brain() {
                             </div>
                             <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium">Notifications</span>
-                                <Button 
+                                <Button
                                     variant={config.notifications ? "default" : "outline"}
                                     size="sm"
                                     onClick={() => handleConfigChange('notifications', !config.notifications)}
@@ -344,9 +344,9 @@ export function Brain() {
                                 <Target className="h-6 w-6" />
                                 <span className="text-sm">Deploy Project</span>
                             </Button>
-                            <Button variant="outline" className="h-20 flex flex-col gap-2" onClick={() => window.location.href = '/ops/org-chart'}>
+                            <Button variant="outline" className="h-20 flex flex-col gap-2" onClick={() => window.location.href = '/ops/company'}>
                                 <Command className="h-6 w-6" />
-                                <span className="text-sm">Open Org Chart</span>
+                                <span className="text-sm">Open Company</span>
                             </Button>
                             <Button variant="outline" className="h-20 flex flex-col gap-2">
                                 <RefreshCw className="h-6 w-6" />

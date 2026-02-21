@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/Button"
-import { RefreshCw, Activity, Clock, Lightbulb } from "lucide-react"
+import { RefreshCw, Activity, Clock, Lightbulb, Database, CheckCircle2, XCircle, AlertCircle, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useAI } from "@/contexts/AIContext"
 
 // Mock Data Generators
 const generateRandomMetric = (base: number, variance: number) => {
@@ -12,65 +13,104 @@ const generateRandomMetric = (base: number, variance: number) => {
 
 const models = [
     {
-        name: "Claude Opus 4.6",
+        id: "claude-4.6-opus",
+        name: "Claude 4.6 Opus",
         status: "online",
         latency: "145ms",
-        description: "Primary model for complex reasoning and code generation tasks.",
-        authType: "OAUTH 2.0",
+        description: "Primary model for complex reasoning and maximum intelligence.",
+        authType: "API KEY",
         cost: "$0.075 / 1k",
         tokens: "12.5M",
         sessions: 8
     },
     {
-        name: "Claude Opus 4.5 (Antigravity)",
+        id: "claude-4.6-sonnet",
+        name: "Claude 4.6 Sonnet",
         status: "online",
-        latency: "160ms",
-        description: "[Fallback 1] High-stability fallback for critical system operations.",
+        latency: "85ms",
+        description: "High-speed model for reasoning, coding and analysis.",
         authType: "API KEY",
-        cost: "$0.060 / 1k",
-        tokens: "4.2M",
-        sessions: 2
+        cost: "$0.015 / 1k",
+        tokens: "24.2M",
+        sessions: 12
     },
     {
-        name: "Gemini 3 Pro Preview",
+        id: "gemini-3.1-pro",
+        name: "Gemini 3.1 Pro",
         status: "online",
         latency: "110ms",
-        description: "[Fallback 2] Experimental model for multimodal analysis and fast context.",
-        authType: "OAUTH 2.0",
+        description: "Model for multimodal research and analysis with large context.",
+        authType: "API KEY",
         cost: "$0.030 / 1k",
         tokens: "8.1M",
         sessions: 5
     },
     {
+        id: "gpt-5.3-codex",
         name: "GPT 5.3 Codex",
         status: "online",
         latency: "180ms",
-        description: "Legacy code completion and pattern matching engine.",
+        description: "Advanced model for complex code generation.",
         authType: "API KEY",
         cost: "$0.045 / 1k",
         tokens: "15.3M",
         sessions: 3
     },
     {
+        id: "gemini-3-flash",
         name: "Gemini 3 Flash",
         status: "idle",
-        latency: "-",
-        description: "Ultra-low latency model for real-time interactions.",
+        latency: "45ms",
+        description: "Ultra-low latency model for real-time and high-speed tasks.",
         authType: "API KEY",
         cost: "$0.005 / 1k",
         tokens: "2.1M",
         sessions: 0
     },
     {
+        id: "nano-banana-pro",
         name: "Nano Banana Pro",
         status: "offline",
         latency: "-",
-        description: "Local lightweight model for offline tasks (Currently Maintainence).",
-        authType: "LOCAL",
-        cost: "$0.000 / 1k",
+        description: "Specialized model for image generation.",
+        authType: "API KEY",
+        cost: "$0.020 / img",
         tokens: "0",
         sessions: 0
     },
+    {
+        id: "veo-3.1",
+        name: "Veo 3.1",
+        status: "offline",
+        latency: "-",
+        description: "Specialized model for high quality video generation.",
+        authType: "API KEY",
+        cost: "$0.100 / sec",
+        tokens: "0",
+        sessions: 0
+    },
+    {
+        id: "openrouter-free",
+        name: "Openrouter/free",
+        status: "online",
+        latency: "120ms",
+        description: "Free cost-effective AI models via OpenRouter.",
+        authType: "API KEY",
+        cost: "FREE",
+        tokens: "5.4M",
+        sessions: 2
+    },
+    {
+        id: "perplexity-sonar",
+        name: "Perplexity Sonar",
+        status: "online",
+        latency: "195ms",
+        description: "Real-time search and intelligence engine.",
+        authType: "API KEY",
+        cost: "$0.020 / req",
+        tokens: "1.2M",
+        sessions: 4
+    }
 ]
 
 interface Session {
@@ -141,12 +181,48 @@ const initialSessions: Session[] = [
         status: "completed" as const,
         tokens: 4500,
         cost: 0.045,
-        tags: ["Claude Opus", "Refactor"],
+        tags: ["Claude Opus", "Refactor", "Apollo"],
         timeAgo: "1h 20m ago",
         formattedDate: "Feb 15 3:30pm",
         timestamp: Date.now() - 80 * 60 * 1000, // 80 mins ago
         notes: "Refactoring complete. 45 files updated."
     },
+    {
+        id: "S-1029",
+        title: "Deploying Vistro-AI Updates",
+        status: "active" as const,
+        tokens: 15400,
+        cost: 0.08,
+        tags: ["Gemini 3 Pro", "Deployment", "Kratos"],
+        timeAgo: "5m ago",
+        formattedDate: "Feb 15 4:47pm",
+        timestamp: Date.now() - 5 * 60 * 1000,
+        currentAction: "Building production bundle..."
+    },
+    {
+        id: "S-1030",
+        title: "Security Audit",
+        status: "idle" as const,
+        tokens: 32000,
+        cost: 0.25,
+        tags: ["Claude Opus", "Security", "Ares"],
+        timeAgo: "22m ago",
+        formattedDate: "Feb 15 4:30pm",
+        timestamp: Date.now() - 22 * 60 * 1000,
+        notes: "Audit paused pending manual review of suspected vulnerabilities."
+    },
+    {
+        id: "S-1031",
+        title: "Generating New UI Assets",
+        status: "active" as const,
+        tokens: 8500,
+        cost: 0.05,
+        tags: ["Nano Banana Pro", "Design", "Hephaestus"],
+        timeAgo: "12m ago",
+        formattedDate: "Feb 15 4:40pm",
+        timestamp: Date.now() - 12 * 60 * 1000,
+        currentAction: "Rendering high-res glassmorphism icons..."
+    }
 ].sort((a, b) => b.timestamp - a.timestamp)
 
 const dailyJobs: CronJob[] = [
@@ -206,6 +282,8 @@ const overnightTasks: OvernightTask[] = [
     }
 ]
 
+const AGENT_FILTERS = ['ALL', 'KRATOS', 'HEPHAESTUS', 'ARES', 'APOLLO']
+
 export function TaskManager() {
     const [lastRefreshed, setLastRefreshed] = useState<string>(new Date().toLocaleTimeString())
     const [metrics, setMetrics] = useState({
@@ -215,7 +293,21 @@ export function TaskManager() {
         tokensUsed: 450230,
         totalCost: 124.50
     })
+    const { connectedModels } = useAI()
     const [sessions, setSessions] = useState<Session[]>(initialSessions)
+
+    // UI State
+    const [sessionsFilter, setSessionsFilter] = useState('ALL')
+    const [sessionsExpanded, setSessionsExpanded] = useState(true)
+    const [overnightExpanded, setOvernightExpanded] = useState(true)
+
+    // Derived State
+    const filteredSessions = useMemo(() => {
+        if (sessionsFilter === 'ALL') return sessions;
+        // In a real app we'd map this mapping more directly, for the mock let's just 
+        // string match the filter name in the tags or fallback to random mapping for demo
+        return sessions.filter(s => s.tags.some(t => t.toUpperCase() === sessionsFilter))
+    }, [sessions, sessionsFilter])
 
     // Simulate Live Updates
     useEffect(() => {
@@ -306,57 +398,147 @@ export function TaskManager() {
                 />
             </div>
 
-            {/* Model Fleet */}
-            <div className="space-y-4">
-                <h2 className="text-xl font-semibold tracking-tight cursor-default">Model Fleet <span className="text-yellow-500">({models.length})</span></h2>
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {models.map((model, i) => (
-                        <ModelCard key={i} model={model} />
-                    ))}
-                </div>
+            {/* Top Panels: Model Fleet & Cron Health */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Model Fleet Panel */}
+                <Card className="flex flex-col border-border/50 bg-card/50">
+                    <CardHeader className="flex flex-row items-center justify-between py-4 px-6 border-b border-border/50">
+                        <div className="flex items-center gap-2">
+                            <Database className="h-4 w-4 text-yellow-500" />
+                            <CardTitle className="text-base font-semibold">Model Fleet</CardTitle>
+                        </div>
+                        <div className="text-xs font-mono px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
+                            {models.length}
+                        </div>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-4 py-4 px-6">
+                        {models.map((model, i) => {
+                            const isConnected = connectedModels[model.id] === true
+                            return (
+                                <div key={i} className="flex justify-between items-start">
+                                    <div className="flex gap-3 items-start">
+                                        <div className={cn(
+                                            "h-1.5 w-1.5 rounded-full mt-2 shrink-0",
+                                            isConnected ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-zinc-600"
+                                        )} />
+                                        <div>
+                                            <div className="text-sm font-medium leading-none mb-1 text-foreground/90">{model.name}</div>
+                                            <div className="text-[11px] text-muted-foreground max-w-[280px] line-clamp-1">{model.description}</div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 text-right shrink-0">
+                                        <div className="text-[11px] font-mono font-medium text-emerald-500/80">{isConnected ? "ONLINE" : "OFFLINE"}</div>
+                                        <div className="text-[11px] font-mono font-medium text-yellow-500">{model.cost}</div>
+                                        <div className="text-[11px] font-mono text-muted-foreground w-8 text-right">{isConnected ? model.latency : "-"}</div>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </CardContent>
+                </Card>
+
+                {/* Cron Health Panel */}
+                <Card className="flex flex-col border-border/50 bg-card/50">
+                    <CardHeader className="flex flex-row items-center justify-between py-4 px-6 border-b border-border/50">
+                        <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-yellow-500" />
+                            <CardTitle className="text-base font-semibold">Cron Health</CardTitle>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs font-mono">
+                            <span className="flex items-center gap-1 text-emerald-500"><CheckCircle2 className="h-3 w-3" />{dailyJobs.filter(j => j.status === 'success').length + weeklyJobs.filter(j => j.status === 'success').length}</span>
+                            <span className="flex items-center gap-1 text-red-500"><XCircle className="h-3 w-3" />{dailyJobs.filter(j => j.status === 'failed').length + weeklyJobs.filter(j => j.status === 'failed').length}</span>
+                            <span className="flex items-center gap-1 text-yellow-500"><AlertCircle className="h-3 w-3" />{dailyJobs.filter(j => j.status !== 'success' && j.status !== 'failed').length + weeklyJobs.filter(j => j.status !== 'success' && j.status !== 'failed').length}</span>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-4 py-4 px-6">
+                        {[...dailyJobs, ...weeklyJobs].map((job, i) => (
+                            <div key={i} className="flex justify-between items-start">
+                                <div className="flex gap-3 items-start">
+                                    <div className={cn(
+                                        "h-1.5 w-1.5 rounded-full mt-2 shrink-0",
+                                        job.status === 'success' ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" :
+                                            job.status === 'running' ? "bg-blue-500 animate-pulse" :
+                                                job.status === 'failed' ? "bg-red-500" : "bg-yellow-500"
+                                    )} />
+                                    <div>
+                                        <div className="text-sm font-medium leading-none mb-1 text-foreground/90">{job.title}</div>
+                                        <div className="text-[11px] text-muted-foreground truncate max-w-[200px]">Ls: {job.duration}</div>
+                                    </div>
+                                </div>
+                                <div className="shrink-0 flex items-center h-full pt-1">
+                                    <Badge variant="outline" className={cn(
+                                        "text-[9px] uppercase px-1.5 py-0 border-none font-bold tracking-wider",
+                                        job.owner === 'Ops' ? "text-blue-400 bg-blue-400/10" :
+                                            job.owner === 'Brain' ? "text-purple-400 bg-purple-400/10" :
+                                                "text-orange-400 bg-orange-400/10"
+                                    )}>
+                                        {job.owner}
+                                    </Badge>
+                                </div>
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
             </div>
 
             {/* Active Sessions */}
-            <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold tracking-tight">Active Sessions <span className="text-yellow-500">({metrics.active})</span></h2>
+            <div className="space-y-4 pt-4">
+                <div
+                    className="flex items-center justify-between border-b pb-2 cursor-pointer group"
+                    onClick={() => setSessionsExpanded(!sessionsExpanded)}
+                >
+                    <h2 className="text-base font-semibold tracking-tight flex items-center gap-2">
+                        <ChevronDown className={cn("h-4 w-4 text-yellow-500 transition-transform duration-200", !sessionsExpanded && "-rotate-90")} />
+                        <span className="flex items-center gap-2 group-hover:text-yellow-500 transition-colors">
+                            Active Sessions <span className="text-yellow-500 text-sm ml-1">({filteredSessions.length})</span>
+                        </span>
+                    </h2>
+                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                        {AGENT_FILTERS.map(f => (
+                            <Badge
+                                key={f}
+                                variant="outline"
+                                onClick={() => setSessionsFilter(f)}
+                                className={cn("text-[9px] font-mono cursor-pointer transition-colors border-border/50 rounded-full px-3 py-0.5", sessionsFilter === f ? "bg-zinc-100 text-zinc-900" : "text-muted-foreground bg-transparent hover:text-foreground")}
+                            >
+                                {f}
+                            </Badge>
+                        ))}
+                    </div>
                 </div>
-                <div className="flex flex-col gap-4">
-                    {sessions.map((session) => (
+
+                <div className={cn(
+                    "grid gap-4 md:grid-cols-2 lg:grid-cols-3 transition-all duration-300 origin-top overflow-hidden",
+                    sessionsExpanded ? "opacity-100 scale-y-100 max-h-[2000px]" : "opacity-0 scale-y-0 max-h-0"
+                )}>
+                    {filteredSessions.map((session) => (
                         <SessionCard key={session.id} session={session} />
                     ))}
-                </div>
-            </div>
-
-            {/* Cron Monitor */}
-            <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold tracking-tight">Cron Monitor <span className="text-yellow-500">({dailyJobs.length + weeklyJobs.length})</span></h2>
-                </div>
-
-                {/* Daily Jobs */}
-                <div className="space-y-3">
-                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider pl-1">Daily Jobs</h3>
-                    {dailyJobs.map(job => (
-                        <CronJobCard key={job.id} job={job} />
-                    ))}
-                </div>
-
-                {/* Weekly Jobs */}
-                <div className="space-y-3 pt-2">
-                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider pl-1">Weekly Jobs</h3>
-                    {weeklyJobs.map(job => (
-                        <CronJobCard key={job.id} job={job} />
-                    ))}
+                    {filteredSessions.length === 0 && (
+                        <div className="col-span-full py-8 text-center text-muted-foreground font-mono text-sm border-2 border-dashed border-border/50 rounded-lg">
+                            No {sessionsFilter !== 'ALL' ? sessionsFilter : ''} sessions currently active.
+                        </div>
+                    )}
                 </div>
             </div>
 
             {/* Overnight Log */}
-            <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold tracking-tight">Overnight Log <span className="text-yellow-500">({overnightTasks.length})</span></h2>
+            <div className="space-y-4 pt-4">
+                <div
+                    className="flex items-center justify-between border-b pb-2 cursor-pointer group"
+                    onClick={() => setOvernightExpanded(!overnightExpanded)}
+                >
+                    <h2 className="text-base font-semibold tracking-tight flex items-center gap-2">
+                        <ChevronDown className={cn("h-4 w-4 text-yellow-500 transition-transform duration-200", !overnightExpanded && "-rotate-90")} />
+                        <span className="flex items-center gap-2 group-hover:text-yellow-500 transition-colors">
+                            Overnight Log <span className="text-yellow-500 text-sm ml-1">({overnightTasks.length})</span>
+                        </span>
+                    </h2>
                 </div>
-                <div className="space-y-1 bg-muted/20 p-6 rounded-lg border border-border/50">
+                <div className={cn(
+                    "space-y-1 bg-muted/20 p-6 rounded-lg border border-border/50 transition-all duration-300 origin-top overflow-hidden",
+                    overnightExpanded ? "opacity-100 scale-y-100 max-h-[1000px]" : "opacity-0 scale-y-0 max-h-0 p-0 border-0"
+                )}>
                     {overnightTasks.map((task) => (
                         <OvernightTaskItem key={task.id} task={task} />
                     ))}
@@ -372,62 +554,6 @@ function MetricCard({ title, value, borderColor, textColor }: any) {
             <CardContent className="p-0 flex flex-col items-center gap-1">
                 <div className={cn("text-3xl font-bold", textColor)}>{value}</div>
                 <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-            </CardContent>
-        </Card>
-    )
-}
-
-function ModelCard({ model }: any) {
-    return (
-        <Card className={cn(
-            "transition-all duration-300 min-h-[220px] flex flex-col justify-between border-l-4 border-l-yellow-500",
-            model.status === 'offline' && "opacity-75 grayscale"
-        )}>
-            <CardHeader className="p-6 pb-2 space-y-4">
-                <div className="flex items-start justify-between">
-                    <div className="space-y-1.5">
-                        <CardTitle className="text-base font-semibold leading-tight flex items-center gap-2">
-                            {model.name}
-                            {model.status !== 'offline' && (
-                                <span className="text-[10px] font-normal text-muted-foreground px-1.5 py-0.5 rounded-full border bg-muted/50 font-mono">
-                                    {model.latency}
-                                </span>
-                            )}
-                        </CardTitle>
-                    </div>
-                </div>
-
-                <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2 min-h-[40px]">
-                    {model.description}
-                </p>
-
-                <div className="flex items-center gap-3 pt-2">
-                    <Badge variant="outline" className="font-mono text-[10px] uppercase font-bold px-2 py-0.5 border-primary/20 bg-primary/5">
-                        {model.authType}
-                    </Badge>
-                    <div className={cn(
-                        "h-2.5 w-2.5 rounded-full shadow-sm",
-                        model.status === 'online' ? "bg-green-500 shadow-green-500/50" :
-                            model.status === 'idle' ? "bg-yellow-500 shadow-yellow-500/50" : "bg-red-500"
-                    )} />
-                </div>
-            </CardHeader>
-
-            <CardContent className="p-6 pt-2">
-                <div className="grid grid-cols-3 gap-2 text-xs border-t pt-4 mt-2">
-                    <div className="flex items-baseline gap-1">
-                        <p className="font-medium font-mono">{model.cost}</p>
-                        <p className="text-muted-foreground text-[10px] uppercase">Cost</p>
-                    </div>
-                    <div className="flex items-baseline gap-1">
-                        <p className="font-medium font-mono">{model.tokens}</p>
-                        <p className="text-muted-foreground text-[10px] uppercase">Tokens</p>
-                    </div>
-                    <div className="flex items-baseline gap-1">
-                        <p className="font-medium font-mono">{model.sessions}</p>
-                        <p className="text-muted-foreground text-[10px] uppercase">Sessions</p>
-                    </div>
-                </div>
             </CardContent>
         </Card>
     )
@@ -457,17 +583,16 @@ function SessionCard({ session }: { session: Session }) {
                                 statusShadow
                             )} />
 
-                            <div className="space-y-2">
+                            <div className="space-y-4">
                                 <h3 className="text-lg font-medium leading-none tracking-tight">{session.title}</h3>
-                                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                                    <div className="flex gap-2">
+                                <div className="flex items-start xl:items-center gap-3 text-sm text-muted-foreground">
+                                    <div className="flex flex-wrap gap-2 mt-0.5 xl:mt-0">
                                         {session.tags.map(tag => (
-                                            <Badge key={tag} variant="secondary" className="text-[10px] px-2 py-0.5 h-5 font-mono">
+                                            <Badge key={tag} variant="secondary" className="text-[10px] px-2 py-0.5 h-5 font-mono whitespace-nowrap">
                                                 {tag}
                                             </Badge>
                                         ))}
                                     </div>
-                                    <span className="text-xs font-mono text-muted-foreground">{session.timeAgo}</span>
                                 </div>
                             </div>
                         </div>
@@ -508,8 +633,9 @@ function SessionCard({ session }: { session: Session }) {
                     </div>
 
                     {/* Date/Time moved to bottom right */}
-                    <div className="flex justify-end pl-8">
-                        <div className="text-[11px] text-muted-foreground font-mono opacity-75">
+                    <div className="flex justify-end gap-3 pl-8">
+                        <span className="text-[11px] text-muted-foreground font-mono opacity-75 whitespace-nowrap">{session.timeAgo}</span>
+                        <div className="text-[11px] text-muted-foreground font-mono opacity-75 whitespace-nowrap">
                             {session.formattedDate}
                         </div>
                     </div>
@@ -519,55 +645,6 @@ function SessionCard({ session }: { session: Session }) {
     )
 }
 
-function CronJobCard({ job }: { job: CronJob }) {
-    return (
-        <Card className="w-full hover:bg-muted/30 transition-colors">
-            <CardContent className="p-4 flex items-center justify-between">
-                {/* Left Side: Indicator + Title/Summary */}
-                <div className="flex items-center gap-4">
-                    <div className={cn(
-                        "h-3 w-3 rounded-full shrink-0",
-                        job.status === 'success' ? "bg-green-500" :
-                            job.status === 'running' ? "bg-blue-500 animate-pulse" :
-                                job.status === 'failed' ? "bg-red-500" : "bg-yellow-500"
-                    )} />
-                    <div>
-                        <h4 className="font-medium text-base leading-none mb-1">{job.title}</h4>
-                        <p className="text-xs text-muted-foreground">{job.summary}</p>
-                    </div>
-                </div>
-
-                {/* Right Side: Time -> Owner -> Tags */}
-                <div className="flex items-center gap-8 text-right">
-                    {/* Time Block */}
-                    <div className="flex flex-col items-end min-w-[80px]">
-                        <span className="text-sm font-mono font-medium">{job.schedule}</span>
-                        <span className="text-[10px] text-muted-foreground uppercase">{job.duration !== '-' ? `Duration: ${job.duration}` : 'Pending'}</span>
-                    </div>
-
-                    {/* Owner Tag */}
-                    <Badge variant="outline" className={cn(
-                        "font-mono text-[10px] uppercase px-2 py-0.5 border-none",
-                        job.owner === 'Ops' ? "bg-blue-500/10 text-blue-500" :
-                            job.owner === 'Brain' ? "bg-purple-500/10 text-purple-500" :
-                                "bg-orange-500/10 text-orange-500"
-                    )}>
-                        {job.owner}
-                    </Badge>
-
-                    {/* Job Tags */}
-                    <div className="flex gap-2 min-w-[140px] justify-end">
-                        {job.tags.map(tag => (
-                            <Badge key={tag} variant="secondary" className="text-[10px] px-2 py-0.5 h-5 font-mono text-muted-foreground bg-muted/50 border border-border/50">
-                                {tag}
-                            </Badge>
-                        ))}
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-    )
-}
 
 function OvernightTaskItem({ task }: { task: OvernightTask }) {
     return (

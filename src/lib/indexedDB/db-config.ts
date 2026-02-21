@@ -1,6 +1,6 @@
 export const dbConfig = {
     name: "AdminDashboardDB",
-    version: 3,
+    version: 4,
     stores: [
         {
             name: "users",
@@ -80,6 +80,15 @@ export const dbConfig = {
             indices: [
                 { name: "type", keyPath: "type" },
                 { name: "messageId", keyPath: "messageId" },
+            ],
+        },
+        {
+            name: "aiChats",
+            keyPath: "id",
+            indices: [
+                { name: "userId", keyPath: "userId" },
+                { name: "isArchived", keyPath: "isArchived" },
+                { name: "updatedAt", keyPath: "updatedAt" }
             ],
         },
     ],

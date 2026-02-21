@@ -3,12 +3,17 @@ import { NewLayout } from "@/components/layout/NewLayout"
 import { AccountLayout } from "@/components/layout/AccountLayout"
 import { Ops } from "@/pages/Ops"
 import { TaskManager } from "@/pages/ops/TaskManager"
-import { OrgChart } from "@/pages/ops/OrgChart"
+import { Company } from "@/pages/ops/Company"
 import Standup from "@/pages/ops/Standup"
 import { Workspace } from "@/pages/ops/Workspace"
 import { Docs } from "@/pages/ops/Docs"
-import { Brain } from "@/pages/Brain"
-import { Lab } from "@/pages/Lab"
+import { KratosHub } from "@/pages/brain/KratosHub"
+import { Memory } from "@/pages/brain/Memory"
+import { CommandCenter } from "@/pages/brain/Command"
+import { Conversations } from "@/pages/brain/Conversations"
+import { Workbench } from "@/pages/lab/Workbench"
+import { Pipeline } from "@/pages/lab/Pipeline"
+import { Models } from "@/pages/lab/Models"
 import { Account } from "@/pages/Account"
 import { ApiAccess } from "@/pages/account/ApiAccess"
 import { Security } from "@/pages/account/Security"
@@ -43,14 +48,22 @@ function App() {
                             {/* Ops Sub-pages */}
                             <Route path="/ops/dashboard" element={<Ops />} />
                             <Route path="/ops/task-manager" element={<TaskManager />} />
-                            <Route path="/ops/org-chart" element={<OrgChart />} />
+                            <Route path="/ops/company" element={<Company />} />
                             <Route path="/ops/standup" element={<Standup />} />
                             <Route path="/ops/workspace" element={<Workspace />} />
                             <Route path="/ops/docs" element={<Docs />} />
 
                             {/* Other Main Pages */}
-                            <Route path="/brain" element={<Brain />} />
-                            <Route path="/lab" element={<Lab />} />
+                            <Route path="/brain" element={<Navigate to="/brain/kratos" replace />} />
+                            <Route path="/brain/kratos" element={<KratosHub />} />
+                            <Route path="/brain/memory" element={<Memory />} />
+                            <Route path="/brain/command" element={<CommandCenter />} />
+                            <Route path="/brain/conversations" element={<Conversations />} />
+
+                            <Route path="/lab" element={<Navigate to="/lab/workbench" replace />} />
+                            <Route path="/lab/workbench" element={<Workbench />} />
+                            <Route path="/lab/pipeline" element={<Pipeline />} />
+                            <Route path="/lab/models" element={<Models />} />
                         </Route>
 
                         <Route element={<AccountLayout />}>

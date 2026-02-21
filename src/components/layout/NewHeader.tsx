@@ -13,13 +13,29 @@ export function NewHeader({ onAIAssistantToggle }: NewHeaderProps) {
 
     const opsNavItems = [
         { title: "Task Manager", href: "/ops/task-manager" },
-        { title: "Org Chart", href: "/ops/org-chart" },
+        { title: "Company", href: "/ops/company" },
         { title: "Standup", href: "/ops/standup" },
         { title: "Workspace", href: "/ops/workspace" },
         { title: "Docs", href: "/ops/docs" },
     ]
 
     const isOpsPage = location.pathname.startsWith("/ops")
+    const isBrainPage = location.pathname.startsWith("/brain")
+    const isLabPage = location.pathname.startsWith("/lab")
+
+    const brainNavItems = [
+        { title: "Kratos", href: "/brain/kratos" },
+        { title: "Memory", href: "/brain/memory" },
+        { title: "Command", href: "/brain/command" },
+        { title: "Conversations", href: "/brain/conversations" },
+    ]
+
+    const labNavItems = [
+        { title: "Workbench", href: "/lab/workbench" },
+        { title: "Pipeline", href: "/lab/pipeline" },
+        { title: "Models", href: "/lab/models" },
+        { title: "Files", href: "/lab/files" },
+    ]
 
     return (
         <header className="w-full bg-background z-50 sticky top-0">
@@ -30,22 +46,22 @@ export function NewHeader({ onAIAssistantToggle }: NewHeaderProps) {
                         <SidebarTrigger className="mr-2 md:hidden" />
 
                         <Link to="/" className="flex items-center gap-2">
-                            <img src="/Icons/water-wave.png" alt="Olympus-OS" className="h-8 w-auto" />
+                            <img src="/Icons/swords.png" alt="Olympus-OS" className="h-8 w-auto" />
                             <span className="font-semibold text-lg">Olympus-OS</span>
                         </Link>
                     </div>
 
-                    {/* Ops Navigation */}
-                    {isOpsPage && (
-                        <nav className="hidden md:flex items-center gap-1 ml-4 border-l pl-4 h-8">
-                            {opsNavItems.map((item) => (
+                    {/* Navigation Items based on Page */}
+                    {(isOpsPage || isBrainPage || isLabPage) && (
+                        <nav className="hidden md:flex items-center gap-1 ml-4 border-l pl-4 h-8 overflow-x-auto whitespace-nowrap">
+                            {(isOpsPage ? opsNavItems : isBrainPage ? brainNavItems : labNavItems).map((item) => (
                                 <Button
                                     key={item.href}
                                     variant="ghost"
                                     size="sm"
                                     className={cn(
                                         "h-8",
-                                        location.pathname === item.href
+                                        location.pathname === item.href || (location.pathname === "/brain" && item.href === "/brain/kratos") || (location.pathname === "/lab" && item.href === "/lab/workbench")
                                             ? "text-foreground bg-accent"
                                             : "text-muted-foreground hover:text-foreground"
                                     )}

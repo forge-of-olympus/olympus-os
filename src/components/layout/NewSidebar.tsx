@@ -56,11 +56,7 @@ export function NewSidebar({ className }: NewSidebarProps) {
                         <SidebarMenuItem key={route.href} className="w-full">
                             <SidebarMenuButton
                                 asChild
-                                isActive={
-                                    route.href === "/ops"
-                                        ? location.pathname.startsWith("/ops")
-                                        : location.pathname === route.href
-                                }
+                                isActive={location.pathname.startsWith(route.href)}
                                 className={cn(
                                     "transition-all duration-300 w-full justify-start pl-[14px]",
                                     "group-data-[collapsible=icon]:!w-full group-data-[collapsible=icon]:!h-10 group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:!justify-start group-data-[collapsible=icon]:!pl-[14px]",

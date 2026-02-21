@@ -3,7 +3,6 @@
 import * as React from "react"
 import {
     Plus,
-    Settings,
     X,
     FileText,
     ChevronDown,
@@ -31,7 +30,6 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -39,7 +37,6 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { useAI } from "@/contexts/AIContext"
-import { AISettingsPanel } from "./AISettingsPanel"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
@@ -48,33 +45,23 @@ import { AIShareModal } from "./AIShareModal"
 import { AIMoreActionsMenu } from "./AIMoreActionsMenu"
 import type { AIMessage } from "@/lib/services/ai-chat-history-service"
 
-const availableModels = [
-    { id: "gemini-3-pro", name: "Gemini 3 Pro", description: "Google's most capable AI model" },
-    { id: "gemini-3-flash", name: "Gemini 3 Flash", description: "Fast, efficient and multimodel" },
-    { id: "gpt-5.2", name: "GPT-5.2", description: "Next-gen reasoning and capability" },
-    { id: "claude-4.5-sonnet", name: "Claude 4.5 Sonnet", description: "Advanced reasoning and coding" },
-    { id: "claude-4.5-opus", name: "Claude 4.5 Opus", description: "Maximum intelligence and performance" },
-]
-
 // Types are now handled by AIContext and AIChatHistoryService
 
 export function AIAssistantSidebar({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
     const {
         currentChatId,
+        messages,
         chatHistory,
-        isLoading: aiLoading,
+        sendMessage,
         loadChat,
         createNewChat,
         renameChat,
         deleteChat,
         logFeedback
     } = useAI()
-    const [messages, setMessages] = React.useState<{ id: string; role: 'user' | 'assistant'; content: string; timestamp: number }[]>([])
     const [searchQuery, setSearchQuery] = React.useState("")
     const [inputValue, setInputValue] = React.useState("")
     const [isLoading, setIsLoading] = React.useState(false)
-    const selectedModel = { id: "kratos", name: "Kratos" }
-    const [showSettings, setShowSettings] = React.useState(false)
     const [renamingChatId, setRenamingChatId] = React.useState<string | null>(null)
     const [renameValue, setRenameValue] = React.useState("")
     const [copiedId, setCopiedId] = React.useState<string | null>(null)
@@ -131,10 +118,6 @@ export function AIAssistantSidebar({ open, onOpenChange }: { open: boolean; onOp
         setShareModalOpen(true)
     }
 
-    const getModelName = (id: string) => {
-        return availableModels.find(m => m.id === id)?.name || id
-    }
-
     const handleExportChat = async (chatId: string) => {
         try {
             const chat = chatHistory.find(c => c.id === chatId)
@@ -166,62 +149,19 @@ export function AIAssistantSidebar({ open, onOpenChange }: { open: boolean; onOp
         }
     }
 
-    // Kratos responses for sidebar
-    const kratosResponses: Record<string, string> = {
-        'hello': 'Greetings, Commander. I am Kratos, your digital Spartan. How may I serve you?',
-        'hi': 'Greetings, Commander. I am Kratos, your digital Spartan. How may I serve you?',
-        'status': 'All systems operational. 300 Spartans ready for deployment. Olympus-OS running at peak efficiency.',
-        'help': 'I am here to assist. Use the Org Chart to manage Spartans, Brain to configure me, or VistroAI for complex AI tasks.',
-        'spawn': 'To spawn sub-agents, navigate to Ops → Org Chart and use the Spawn controls.',
-        'deploy': 'Deployment sequence ready. Which project should I deploy?',
-        'olympus': 'Olympus-OS is the enterprise dashboard. Vistro-AI handles AI tasks, the Org Chart manages Spartans.',
-        'kronos': 'Kronos is your command hierarchy. Access it through Ops → Org Chart.',
-        'default': 'I receive your command, Commander. Executing now. For complex tasks, use VistroAI or the Org Chart.'
-    }
-
-    const getKratosResponse = (input: string): string => {
-        const lower = input.toLowerCase()
-        for (const [key, response] of Object.entries(kratosResponses)) {
-            if (lower.includes(key)) return response
-        }
-        return kratosResponses.default
-    }
-
     const handleSendMessage = async () => {
         if (!inputValue.trim() || isLoading) return
         const content = inputValue.trim()
         setInputValue("")
         setIsLoading(true)
 
-        // Add user message
-        const userMsg: typeof messages[0] = {
-            id: Date.now().toString(),
-            role: 'user',
-            content: content,
-            timestamp: Date.now()
+        try {
+            await sendMessage(content, "kratos")
+        } catch (error) {
+            console.error("Failed to send message:", error)
+        } finally {
+            setIsLoading(false)
         }
-        const updatedMessages = [...messages, userMsg]
-        setMessages(updatedMessages)
-
-        // Sync to localStorage for VistroAI Kratos mode
-        localStorage.setItem('kratos-chat', JSON.stringify(updatedMessages))
-
-        // Get Kratos response
-        await new Promise(resolve => setTimeout(resolve, 800))
-        const response = getKratosResponse(content)
-        
-        const assistantMsg: typeof messages[0] = {
-            id: (Date.now() + 1).toString(),
-            role: 'assistant',
-            content: response,
-            timestamp: Date.now()
-        }
-        const finalMessages = [...updatedMessages, assistantMsg]
-        setMessages(finalMessages)
-        
-        // Sync to localStorage for VistroAI Kratos mode
-        localStorage.setItem('kratos-chat', JSON.stringify(finalMessages))
-        setIsLoading(false)
     }
 
     const handleIdeaClick = (idea: string) => {

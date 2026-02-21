@@ -14,11 +14,13 @@ interface AISettingsPanelProps {
 }
 
 const availableModels = [
-    { id: "gemini-3-pro", name: "Gemini 3 Pro" },
+    { id: "gpt-5.3-codex", name: "GPT 5.3 Codex" },
+    { id: "claude-4.6-sonnet", name: "Claude 4.6 Sonnet" },
+    { id: "claude-4.6-opus", name: "Claude 4.6 Opus" },
+    { id: "gemini-3.1-pro", name: "Gemini 3.1 Pro" },
     { id: "gemini-3-flash", name: "Gemini 3 Flash" },
-    { id: "gpt-5.2", name: "GPT-5.2" },
-    { id: "claude-4.5-sonnet", name: "Claude 4.5 Sonnet" },
-    { id: "claude-4.5-opus", name: "Claude 4.5 Opus" },
+    { id: "openrouter-free", name: "Openrouter/free" },
+    { id: "perplexity-sonar", name: "Perplexity Sonar" }
 ]
 
 export function AISettingsPanel({ open, onOpenChange }: AISettingsPanelProps) {
