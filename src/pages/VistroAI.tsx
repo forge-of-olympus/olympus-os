@@ -40,12 +40,13 @@ export function VistroAI() {
         archiveChat,
         deleteChat,
         logFeedback,
-        connectedModels
+        connectedModels,
+        activeContext,
+        setActiveContext
     } = useAI()
     const [input, setInput] = React.useState("")
     const [selectedModel, setSelectedModel] = React.useState("gemini-3-flash")
     const [showMoreModels, setShowMoreModels] = React.useState(false)
-    const [chatWithKratos, setChatWithKratos] = React.useState(false)
     const [sidebarBehavior, setSidebarBehavior] = React.useState("expand")
     const [editingChatId, setEditingChatId] = React.useState<string | null>(null)
     const [editingTitle, setEditingTitle] = React.useState("")
@@ -56,6 +57,16 @@ export function VistroAI() {
     const messagesEndRef = React.useRef<HTMLDivElement>(null)
     const scrollAreaRef = React.useRef<HTMLDivElement>(null)
 
+    // Derived state for local UI toggle
+    const chatWithKratos = activeContext === 'kratos'
+
+    // Function to toggle Kratos mode
+    const toggleKratos = (active: boolean) => {
+        setActiveContext(active ? 'kratos' : 'general')
+        // When switching to general, we might want to ensure a valid model is selected or load last general chat
+        // For now, context handles loading Kratos chat on switch.
+    }
+
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
     }
@@ -63,25 +74,6 @@ export function VistroAI() {
     React.useEffect(() => {
         scrollToBottom()
     }, [messages])
-
-    // Sync with sidebar when Kratos is active
-    React.useEffect(() => {
-        if (chatWithKratos) {
-            const savedChat = localStorage.getItem('kratos-chat')
-            if (savedChat) {
-                try {
-                    const parsed = JSON.parse(savedChat)
-                    if (parsed.length > 0 && messages.length === 0) {
-                        parsed.forEach(() => {
-                            // Use sendMessage to add to AI context properly
-                        })
-                    }
-                } catch (e) {
-                    console.error('Failed to load kratos chat:', e)
-                }
-            }
-        }
-    }, [chatWithKratos])
 
     const handleSendMessage = async () => {
         if (!input.trim() || isLoading) return
@@ -95,6 +87,15 @@ export function VistroAI() {
             await sendMessage(content, selectedModel)
         }
     }
+
+    // Filter chat history based on active context
+    const filteredHistory = chatHistory.filter(chat => {
+        if (activeContext === 'kratos') {
+            return chat.model === 'kratos'
+        } else {
+            return chat.model !== 'kratos'
+        }
+    })
 
     const handleChatClick = async (chatId: string) => {
         await loadChat(chatId)
@@ -180,7 +181,7 @@ export function VistroAI() {
                                             {(showMoreModels ? availableModels : availableModels.slice(0, 3)).map(model => (
                                                 <DropdownMenuItem
                                                     key={model.id}
-                                                    onClick={() => { setSelectedModel(model.id); setChatWithKratos(false); }}
+                                                    onClick={() => { setSelectedModel(model.id); toggleKratos(false); }}
                                                     className="cursor-pointer flex items-center justify-between"
                                                 >
                                                     <span>{model.name}</span>
@@ -220,7 +221,7 @@ export function VistroAI() {
                                         <DropdownMenuContent align="start">
                                             <DropdownMenuItem
                                                 className="cursor-pointer font-medium"
-                                                onClick={() => setChatWithKratos(!chatWithKratos)}
+                                                onClick={() => toggleKratos(!chatWithKratos)}
                                             >
                                                 {chatWithKratos ? '✓ Chatting with Kratos' : '🪓 Chat with Kratos'}
                                             </DropdownMenuItem>
@@ -358,12 +359,12 @@ export function VistroAI() {
                                             "text-xs font-semibold text-muted-foreground uppercase tracking-wider group-data-[collapsible=icon]:hidden text-left",
                                             sidebarBehavior === "expand" && "group-data-[collapsible=icon]:group-hover:block"
                                         )}>
-                                            Your Chats
+                                            {activeContext === 'kratos' ? 'Kratos History' : 'General History'}
                                         </p>
                                     </div>
                                 )}
 
-                                {chatHistory.map((chat) => (
+                                {filteredHistory.map((chat) => (
                                     <SidebarMenuItem key={chat.id} className="w-full group/item">
                                         <div className="flex items-center w-full relative">
                                             <SidebarMenuButton

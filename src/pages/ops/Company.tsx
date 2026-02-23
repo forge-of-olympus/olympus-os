@@ -87,9 +87,9 @@ const agentTypes: { type: SubAgent['type']; label: string; icon: string; color: 
 
 export function Company() {
     const [agents, setAgents] = useState<SubAgent[]>([
-        { ...createAgent('coding', undefined, 'Hephaestus'), status: 'working', lastTask: 'Building command interfaces', completedTasks: 23, currentTaskProgress: 80 },
-        { ...createAgent('builder', undefined, 'Ares'), status: 'completed', lastTask: 'Deploy Olympus-OS to production', completedTasks: 156 },
-        { ...createAgent('research', undefined, 'Apollo'), status: 'idle', completedTasks: 89 }
+        { ...createAgent('general', undefined, 'Minerva'), status: 'working', lastTask: 'Strategic Planning & Logic Flow', completedTasks: 42, currentTaskProgress: 65 },
+        { ...createAgent('coding', undefined, 'Hephaestus'), status: 'working', lastTask: 'Technical Execution & Code Generation', completedTasks: 156, currentTaskProgress: 88 },
+        { ...createAgent('research', undefined, 'Apollo'), status: 'working', lastTask: 'Intelligence Gathering & Data Scouting', completedTasks: 89, currentTaskProgress: 45 }
     ])
     const [selectedAgent, setSelectedAgent] = useState<SubAgent | null>(null)
     const [commandInput, setCommandInput] = useState('')
@@ -108,9 +108,9 @@ export function Company() {
 
     useEffect(() => {
         setStatusFeed([
-            { id: '1', message: 'Command Hierarchy initialized', type: 'info', timestamp: new Date().toISOString() },
+            { id: '1', message: 'Command Hierarchy initialized: Kratos -> Minerva, Hephaestus, Apollo', type: 'info', timestamp: new Date().toISOString() },
             { id: '2', message: '300 Spartans ready for deployment', type: 'success', timestamp: new Date().toISOString() },
-            { id: '3', message: 'Hephaestus coordinating build operations', type: 'info', timestamp: new Date(Date.now() - 1000).toISOString() }
+            { id: '3', message: 'Minerva coordinating strategic logic flows', type: 'info', timestamp: new Date(Date.now() - 1000).toISOString() }
         ])
     }, [])
 
@@ -304,7 +304,7 @@ export function Company() {
                                     </div>
                                     <div>
                                         <div className="text-2xl font-bold text-emerald-500">KRATOS</div>
-                                        <div className="text-sm text-muted-foreground">Commander • {agents.length} Spartans Deployed • {rootAgents.filter(a => getChildAgents(a.id).length > 0).length} Chiefs</div>
+                                        <div className="text-sm text-muted-foreground">High Orchestrator • 3 Chiefs (Minerva, Hephaestus, Apollo) • {agents.length} Spartans</div>
                                     </div>
                                 </div>
                             </div>

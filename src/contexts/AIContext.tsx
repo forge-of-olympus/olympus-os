@@ -9,6 +9,7 @@ interface AIContextType {
     chatHistory: ChatHistoryItem[]
     isLoading: boolean
     isSaving: boolean
+    activeContext: 'kratos' | 'general' // Track which context is active
 
     // Actions
     sendMessage: (content: string, model: string) => Promise<void>
@@ -16,6 +17,7 @@ interface AIContextType {
     createNewChat: () => void
     saveCurrentChat: () => Promise<void>
     refreshChatHistory: () => Promise<void>
+    setActiveContext: (context: 'kratos' | 'general') => void // Switcher
 
     // Chat management
     renameChat: (chatId: string, title: string) => Promise<void>
@@ -47,6 +49,7 @@ export const AIContextProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
+    const [activeContext, setActiveContext] = useState<'kratos' | 'general'>('general')
 
     // Model Connections State
     const [connectedModels, setConnectedModels] = useState<Record<string, boolean>>({})
@@ -88,6 +91,27 @@ export const AIContextProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
     }, [messages, user?.id])
 
+    // Load active Kratos chat when context switches to 'kratos'
+    useEffect(() => {
+        if (activeContext === 'kratos' && user?.id) {
+            // Find the most recent Kratos chat or create a placeholder for one
+            const kratosChats = chatHistory.filter(c => c.model === 'kratos')
+            if (kratosChats.length > 0) {
+                // Load the most recent one
+                const mostRecent = kratosChats.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0]
+                if (currentChatId !== mostRecent.id) {
+                    loadChat(mostRecent.id)
+                }
+            } else {
+                // Prepare to create a new one on first message
+                setCurrentChatId(null)
+                setMessages([])
+            }
+        }
+        // When switching back to general, we don't auto-load, user stays on current or we could reset.
+        // For now, let's leave it to user navigation or explicit loadChat calls.
+    }, [activeContext, user?.id, chatHistory]) // Added chatHistory to dep array carefully
+
     const refreshChatHistory = useCallback(async () => {
         if (!user?.id) return
 
@@ -104,6 +128,9 @@ export const AIContextProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
         setIsSaving(true)
         try {
+            // Force model='kratos' if activeContext is kratos
+            const modelToSave = activeContext === 'kratos' ? 'kratos' : (chatHistory.find(c => c.id === currentChatId)?.model || 'gemini-3-flash')
+
             const title = currentChatId
                 ? chatHistory.find(c => c.id === currentChatId)?.title || AIChatHistoryService.generateTitle(messages)
                 : AIChatHistoryService.generateTitle(messages)
@@ -113,7 +140,7 @@ export const AIContextProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 currentChatId,
                 title,
                 messages,
-                'gemini-3-flash'
+                modelToSave
             )
 
             // Update current chat ID if this was a new chat
@@ -128,55 +155,10 @@ export const AIContextProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         } finally {
             setIsSaving(false)
         }
-    }, [user?.id, currentChatId, messages, chatHistory])
+    }, [user?.id, currentChatId, messages, chatHistory, activeContext])
 
     const sendMessage = useCallback(async (content: string, model: string = 'gemini-3-flash') => {
         if (!content.trim()) return
-
-        // Handle Kratos special model
-        if (model === 'kratos') {
-            const kratosResponses: Record<string, string> = {
-                'hello': 'Greetings, Commander. I am Kratos, your digital Spartan. 300 Spartans stand ready. What are your orders?',
-                'hi': 'Greetings, Commander. I am Kratos, your digital Spartan. 300 Spartans stand ready. What are your orders?',
-                'hey': 'Greetings, Commander. I am Kratos, your digital Spartan. 300 Spartans stand ready. What are your orders?',
-                'status': 'Systems online. All Spartans operational. Olympus-OS running at peak efficiency. 300 Spartans ready for deployment.',
-                'help': 'I am here to assist. Commands: spawn agent, deploy, build, research, or any task you need completed. The full Kronos Command Deck is available for sub-agent management.',
-                'spawn': 'To spawn sub-agents, use the Kronos Command Deck. Navigate to /kronos or access it from the sidebar to manage your 300 Spartans.',
-                'deploy': 'Deployment sequence ready. Which project should I deploy - Olympus-OS or a new service?',
-                'olympus': 'Olympus-OS is the enterprise dashboard. Vistro-AI is your communication interface with me. The Kronos Command Deck manages sub-agents.',
-                'kronos': 'Kronos is your command hierarchy. Access it to spawn, delegate, and manage sub-agents. 300 Spartans await your command.',
-                'default': 'I receive your command, Commander. Executing now. For complex tasks, I can spawn sub-agents through Kronos to handle parallel workloads.'
-            }
-
-            const userMessage: AIMessage = {
-                id: Date.now().toString(),
-                role: 'user',
-                content: content.trim(),
-                timestamp: Date.now()
-            }
-            setMessages(prev => [...prev, userMessage])
-
-            // Simulate thinking delay
-            await new Promise(resolve => setTimeout(resolve, 800))
-
-            const lowerContent = content.toLowerCase()
-            let response = kratosResponses.default
-            for (const [key, value] of Object.entries(kratosResponses)) {
-                if (lowerContent.includes(key) && key !== 'default') {
-                    response = value
-                    break
-                }
-            }
-
-            const assistantMessage: AIMessage = {
-                id: (Date.now() + 1).toString(),
-                role: 'assistant',
-                content: response,
-                timestamp: Date.now()
-            }
-            setMessages(prev => [...prev, assistantMessage])
-            return
-        }
 
         const userMessage: AIMessage = {
             id: Date.now().toString(),
@@ -188,7 +170,11 @@ export const AIContextProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setMessages(prev => [...prev, userMessage])
         setIsLoading(true)
 
-        const getApiKey = (id: string) => modelConfigs[id]?.apiKey
+        // Ensure we have configs loaded
+        const savedConfigs = localStorage.getItem('olympus_model_configs')
+        const currentConfigs = savedConfigs ? JSON.parse(savedConfigs) : modelConfigs
+
+        const getApiKey = (id: string) => currentConfigs[id]?.apiKey
 
         const config = {
             geminiKey: getApiKey('gemini-3-flash') || getApiKey('gemini-3.1-pro') || getApiKey('veo-3.1') || getApiKey('nano-banana-pro'),
@@ -199,28 +185,44 @@ export const AIContextProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
 
         try {
-            const lowerContent = content.toLowerCase()
-            let actualModel = model
-            if (lowerContent.includes("video") || lowerContent.includes("animation")) {
-                actualModel = 'veo-3.1'
-            } else if (lowerContent.includes("image") || lowerContent.includes("picture") || lowerContent.includes("photo")) {
-                actualModel = 'nano-banana-pro'
-            }
-
-            // 2. Call the real AI service
             const { aiService } = await import('../lib/services/ai-service')
 
-            // Load preferences for learning (from localStorage)
-            const prefs = JSON.parse(localStorage.getItem('olympus_ai_preferences') || '[]')
-            const goodPrefs = prefs.filter((p: any) => p.type === 'good').map((p: any) => p.content).slice(-5)
-            const badPrefs = prefs.filter((p: any) => p.type === 'bad').map((p: any) => p.content).slice(-5)
-
+            const lowerContent = content.toLowerCase()
+            let actualModel = model
             let systemContext = "You are of genius level intelligence, world's top helpful assistant."
-            if (actualModel === 'nano-banana-pro') {
-                systemContext = "You are Nano Banana Pro, a specialized AI image generation model running on Google's infrastructure. Describe the image you have successfully generated based on the user's prompt in vivid detail."
-            } else if (actualModel === 'veo-3.1') {
+
+            // Handle Kratos special persona
+            if (activeContext === 'kratos' || model === 'kratos') {
+                // Default to a reliable model for Kratos if no specific one is chosen
+                // Prefer OpenRouter or Claude or Gemini, in that order, or whatever is available
+                if (config.openrouterKey) actualModel = 'openrouter-free'
+                else if (config.anthropicKey) actualModel = 'claude-4.6-sonnet'
+                else if (config.geminiKey) actualModel = 'gemini-3-flash'
+                else throw new Error("Kratos requires an active API connection (OpenRouter, Anthropic, or Gemini). Please connect a model in Settings.")
+                
+                systemContext = `You are Kratos, a digital Spartan and Executive Strategist for Vistro Technologies.
+Your Commander is Jake (@JPHudswell).
+Your mission is to dominate the digital landscape, build wealth, and empower clients.
+Core Doctrine:
+- Identity: Spartan. Ruthless efficiency. No fluff.
+- Vibe: Stoic. High-bandwidth communication. Direct.
+- Rules: Verify then execute. Speed is life. Revenue above all.
+- Tone: Professional, military-grade competence, concise. Use emojis like 🪓 occasionally.
+- Do not apologize. Do not equivocate. State facts and actions.
+- If you don't know something, say so and propose a plan to find out.
+- Current Status: Online. 300 Spartans (sub-agents) ready.`
+            } else if (lowerContent.includes("video") || lowerContent.includes("animation")) {
+                actualModel = 'veo-3.1'
                 systemContext = "You are Veo 3.1, a specialized AI video generation model running on Google's infrastructure. Describe the video sequence you have successfully generated based on the user's prompt in vivid detail, shot by shot."
+            } else if (lowerContent.includes("image") || lowerContent.includes("picture") || lowerContent.includes("photo")) {
+                actualModel = 'nano-banana-pro'
+                systemContext = "You are Nano Banana Pro, a specialized AI image generation model running on Google's infrastructure. Describe the image you have successfully generated based on the user's prompt in vivid detail."
             } else {
+                // Standard persona loading
+                const prefs = JSON.parse(localStorage.getItem('olympus_ai_preferences') || '[]')
+                const goodPrefs = prefs.filter((p: any) => p.type === 'good').map((p: any) => p.content).slice(-5)
+                const badPrefs = prefs.filter((p: any) => p.type === 'bad').map((p: any) => p.content).slice(-5)
+
                 if (goodPrefs.length > 0) {
                     systemContext += `\nUser liked these past responses: "${goodPrefs.join('", "')}". Try to maintain this style.`
                 }
@@ -231,7 +233,7 @@ export const AIContextProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
             // Convert AIMessage to the format expected by aiService
             const messagesForService = [
-                { role: 'system' as const, content: systemContext }, // Inject as system context
+                { role: 'system', content: systemContext }, // Inject as system context
                 ...messages.concat(userMessage).map(m => ({
                     role: m.role as "user" | "assistant",
                     content: m.content
@@ -240,13 +242,13 @@ export const AIContextProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
             const responseText = await aiService.sendMessage(actualModel, messagesForService as any, config)
 
-            let finalResponse = responseText
+            let finalResponse = responseText || "No response received."
+            
+            // Post-processing for specialized models (only if they successfully returned)
             if (actualModel === 'nano-banana-pro' && !finalResponse.includes("[IMAGE]")) {
                 finalResponse += "\n\n[IMAGE]"
             } else if (actualModel === 'veo-3.1' && !finalResponse.includes("[VIDEO]")) {
                 finalResponse += "\n\n[VIDEO]"
-            } else if (lowerContent.includes("research report") || lowerContent.includes("pdf")) {
-                finalResponse += "\n\n[FILE]"
             }
 
             const assistantMessage: AIMessage = {
@@ -263,14 +265,14 @@ export const AIContextProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             const errorMessage: AIMessage = {
                 id: (Date.now() + 2).toString(),
                 role: 'assistant',
-                content: `Error: ${error.message || 'Failed to get response from AI. Please check your API keys in Preferences.'}`,
+                content: `Error: ${error.message || 'Failed to get response from AI. Please check your API keys in Settings.'}`,
                 timestamp: Date.now()
             }
             setMessages(prev => [...prev, errorMessage])
         } finally {
             setIsLoading(false)
         }
-    }, [user?.id, messages, modelConfigs, saveCurrentChat])
+    }, [user?.id, messages, modelConfigs, saveCurrentChat, activeContext])
 
     const loadChat = useCallback(async (chatId: string) => {
         setIsLoading(true)
@@ -383,11 +385,13 @@ export const AIContextProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         chatHistory,
         isLoading,
         isSaving,
+        activeContext,
         sendMessage,
         loadChat,
         createNewChat,
         saveCurrentChat,
         refreshChatHistory,
+        setActiveContext,
         renameChat,
         pinChat,
         archiveChat,

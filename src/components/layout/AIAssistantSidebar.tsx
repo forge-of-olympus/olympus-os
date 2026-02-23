@@ -57,7 +57,9 @@ export function AIAssistantSidebar({ open, onOpenChange }: { open: boolean; onOp
         createNewChat,
         renameChat,
         deleteChat,
-        logFeedback
+        logFeedback,
+        activeContext,
+        setActiveContext
     } = useAI()
     const [searchQuery, setSearchQuery] = React.useState("")
     const [inputValue, setInputValue] = React.useState("")
@@ -70,6 +72,13 @@ export function AIAssistantSidebar({ open, onOpenChange }: { open: boolean; onOp
     const [shareContent, setShareContent] = React.useState({ user: "", ai: "" })
     const messagesEndRef = React.useRef<HTMLDivElement>(null)
     const textareaRef = React.useRef<HTMLTextAreaElement>(null)
+
+    // Force context to 'kratos' when sidebar opens
+    React.useEffect(() => {
+        if (open && activeContext !== 'kratos') {
+            setActiveContext('kratos')
+        }
+    }, [open, activeContext, setActiveContext])
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -176,8 +185,10 @@ export function AIAssistantSidebar({ open, onOpenChange }: { open: boolean; onOp
         }
     }
 
+    // Filter chat history to show ONLY Kratos chats
     const filteredChats = chatHistory.filter(chat =>
-        chat.title.toLowerCase().includes(searchQuery.toLowerCase())
+        chat.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
+        chat.model === 'kratos' // Enforce Kratos separation
     )
 
     const getCurrentChatTitle = () => {

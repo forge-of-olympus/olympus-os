@@ -11,7 +11,7 @@ export function NewLayout() {
     return (
         <SidebarProvider defaultOpen={false}>
             <div className="flex h-screen overflow-hidden flex-col w-full">
-                <div className="z-50 border-b bg-background flex-none">
+                <div className="z-50 border-b bg-background flex-none h-16">
                     <NewHeader onAIAssistantToggle={() => setIsAIAssistantOpen(!isAIAssistantOpen)} />
                 </div>
                 <div className="flex flex-1 w-full overflow-hidden relative">

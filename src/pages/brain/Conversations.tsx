@@ -70,12 +70,18 @@ export function Conversations() {
                                             "h-8 w-8 rounded-full flex items-center justify-center shrink-0 border",
                                             currentChatId === chat.id ? "bg-background border-primary/20 text-primary" : "bg-muted border-transparent"
                                         )}>
-                                            <MessageSquare className="h-4 w-4" />
+                                            {/* Distinguish Kratos chats visually */}
+                                            {chat.model === 'kratos' ? (
+                                                <span className="text-sm">🪓</span>
+                                            ) : (
+                                                <MessageSquare className="h-4 w-4" />
+                                            )}
                                         </div>
                                         <div className="flex flex-col overflow-hidden text-left">
                                             <span className="font-medium truncate">{chat.title}</span>
-                                            <span className="text-[10px] text-muted-foreground truncate font-normal mt-0.5">
-                                                {new Date(chat.updatedAt).toLocaleDateString()} {new Date(chat.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            <span className="text-[10px] text-muted-foreground truncate font-normal mt-0.5 flex items-center gap-1">
+                                                {chat.model === 'kratos' && <span className="text-emerald-500 font-semibold text-[9px]">KRATOS</span>}
+                                                <span>{new Date(chat.updatedAt).toLocaleDateString()}</span>
                                             </span>
                                         </div>
                                     </div>
